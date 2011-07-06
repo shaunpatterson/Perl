@@ -6,6 +6,7 @@ sub new {
 
     $self->{name} = shift;
     $self->{regex} = shift;
+    $self->{match} = shift;
     $self->{start} = shift;
     $self->{end} = shift;
 
@@ -23,6 +24,11 @@ sub getRegex {
     return $self->{regex};
 }
 
+sub getMatch {
+    my $self = shift;
+    return $self->{match};
+}
+
 sub getStart {
     my $self = shift;
     return $self->{start};
@@ -35,7 +41,7 @@ sub getEnd {
 
 sub toString () {
     my $self = shift;
-    return "$self->{name}:$self->{regex}:$self->{start}:$self->{end}";
+    return "$self->{name}:$self->{regex}:$self->{match}:$self->{start}:$self->{end}";
 }
 
 1;
