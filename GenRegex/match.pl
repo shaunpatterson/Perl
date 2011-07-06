@@ -93,6 +93,32 @@ sub findMatches ($\%) {
     return %matchedLocations;
 }
 
+sub locationSortComparator ($$) {
+    my ($a, $b) = @_;
+
+    # This is not perfect by any means -- sort by the length of the regular expression
+    #  This is so things like 'char' matches of "a" are before 'word' matches of "a"
+    my $regexComparison = length($a->getRegex()) - length($b->getRegex());
+    if ($regexComparison != 0) {
+        return $regexComparison;
+    }
+
+    # Sort by position next
+    my $positionComparison = $a->getStart() - $b->getStart();
+    if ($positionComparison != 0) {
+        return $positionComparison;
+    }
+    
+    # And by the size of the match
+    my $sizeComparison = length($a->getMatch()) - length($b->getMatch());
+    if ($sizeComparison != 0) {
+        return $sizeComparison;
+    }
+
+    return $sizeComparison;
+}
+
+
 sub flattenMatchedLocations (\%) {
     my ($matchedLocations) = @_;
 
@@ -104,11 +130,11 @@ sub flattenMatchedLocations (\%) {
         }
     }
 
-    # Now sort the locations by size of match
-
-    # Actually... I'm not going to do it this way but I'll
-    #  leave this for later
+    # And sort
+    return sort locationSortComparator @flattenedLocations;
 }
+
+
 
 sub sortHashArray {
     my (%hash) = @_;
@@ -149,15 +175,21 @@ sub main {
     my %mappings = ();
 
     $mappings{'word'} = [ "([a-z]+)" ];
-    $mappings{'char'} = [ "([a-z])" ];
+    #$mappings{'char'} = [ "([a-z])" ];
     #$mappings{'int'} = [ "([0-9]+)" ];
     #$mappings{'mmyydd'} = 
 
     # Hash{start of match} = [ Location Location Location ... ]
     my %matchedLocations = findMatches ($testCase1, %mappings);
 
+    # Simulated selections
+#    my @userSelections = [ 
+
+
     printLocationHash (%matchedLocations);
-   
+  
+
+
     my @selectedLocations = ();
     push (@selectedLocations, $matchedLocations{0}[0]);
     push (@selectedLocations, $matchedLocations{5}[0]);
@@ -178,14 +210,15 @@ sub main {
     }
 
     
-    printLocationHash (%matchedLocations);
-
-    %matchedLocations = sortHashArray(%matchedLocations);
+    # %matchedLocations = sortHashArray(%matchedLocations);
     
-    printLocationHash (%matchedLocations);
+    my @finalLocations = flattenMatchedLocations(%matchedLocations);
 
-
-    #flattenMatchedLocations(%matchedLocations);
+    my $i = 0;
+    foreach my $location (@finalLocations) {
+        print "$i: " . $location->toString() . "\n";
+        $i++;
+    }
 
     # How would user select?  essentially &x=7&y=3 ?? 
     #                         Or maybe &7,3 -- Keep it simple
