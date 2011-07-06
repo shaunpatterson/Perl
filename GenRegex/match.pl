@@ -128,52 +128,30 @@ sub main {
     # Hash{start of match} = [ Location Location Location ... ]
     my @matchedLocations = findMatches ($testCase1, @mappingsList);
 
+    my $i = 0;
     foreach my $location (@matchedLocations) {
-        print $location->toString() . "\n";
+        print "$i: " . $location->toString() . "\n";
+        $i++;
     }
 
-    return;
-
     # Simulated selections
-#    my @userSelections = [ 
+    my @userSelections = ( 11, 12, 13, 14 );
 
-
-    #printLocationHash (%matchedLocations);
-  
-    #my @selectedLocations = ();
-    #push (@selectedLocations, $matchedLocations{0}[0]);
-    #push (@selectedLocations, $matchedLocations{5}[0]);
-    #push (@selectedLocations, $matchedLocations{8}[0]);
-    #push (@selectedLocations, $matchedLocations{10}[0]);
-
-    #my $regEx = buildRegex (@selectedLocations);
-
-    #print $regEx . "\n";
-
-    #if ($testCase1 =~ m/$regEx/ig) {
-        #print "Num matches: " . scalar @- . "\n";
-        #print "Success!\n";
-
-        #foreach my $match (@-) {
-            #print "$match\n";
-        #}
-    #}
-
+    my @selectedLocations = ();
+    foreach my $selection (@userSelections) {
+        push (@selectedLocations, $matchedLocations[$selection]);
+    }
     
-    ## %matchedLocations = sortHashArray(%matchedLocations);
-    
-    #my @finalLocations = flattenMatchedLocations(%matchedLocations);
+    my $regEx = buildRegex (@selectedLocations);
+    print $regEx . "\n";
 
-    #my $i = 0;
-    #foreach my $location (@finalLocations) {
-        #print "$i: " . $location->toString() . "\n";
-        #$i++;
-    #}
+    if ($testCase1 =~ m/$regEx/ig) {
+        print "Num matches: " . scalar @- . "\n";
+        print "Success!\n";
 
-    ## How would user select?  essentially &x=7&y=3 ?? 
-    ##                         Or maybe &7,3 -- Keep it simple
-
-
-
+        foreach my $match (@-) {
+            print "$match\n";
+        }
+    }
 
 }
