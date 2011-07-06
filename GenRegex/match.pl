@@ -98,7 +98,7 @@ sub flattenMatchedLocations (\%) {
 
     my @flattenedLocations = ();
 
-    foreach my $key (%$matchedLocations) {
+    foreach my $key (keys %$matchedLocations) {
         foreach my $location (@{$matchedLocations->{$key}}) {
             push(@flattenedLocations, $location);
         }
@@ -108,6 +108,37 @@ sub flattenMatchedLocations (\%) {
 
     # Actually... I'm not going to do it this way but I'll
     #  leave this for later
+}
+
+sub sortHashArray {
+    my (%hash) = @_;
+
+    print "--------------------------------------\n";
+    print join (' ', sort {$a <=> $b} keys %hash) . "\n";
+
+    printLocationHash(\%hash);
+
+    foreach my $key (keys %hash) {
+        print "Key: $key" . "\n";
+        # Sort the array by size of match
+        $hash{$key} = sort {length($a->getMatch()) <=> length($b->getMatch())} @{$hash{$key}};
+    }
+
+    printLocationHash(\%hash);
+
+
+    return %hash;
+}
+
+sub printLocationHash (\%) {
+    my ($hash) = @_;
+
+    foreach my $key (sort { $a <=> $b } keys %$hash) {
+        print "$key:\n";
+        foreach my $location (@{$hash->{$key}}) {
+            print "   " . $location->toString () . "\n";
+        }
+    }
 
 }
 
@@ -125,13 +156,7 @@ sub main {
     # Hash{start of match} = [ Location Location Location ... ]
     my %matchedLocations = findMatches ($testCase1, %mappings);
 
-    # Now try and loop through the hash
-    foreach my $key (sort { $a <=> $b } keys %matchedLocations) {
-        print "$key:\n";
-        foreach my $location (@{$matchedLocations{$key}}) {
-            print "   " . $location->toString () . "\n";
-        }
-    }
+    printLocationHash (%matchedLocations);
    
     my @selectedLocations = ();
     push (@selectedLocations, $matchedLocations{0}[0]);
@@ -152,10 +177,19 @@ sub main {
         }
     }
 
+    
+    printLocationHash (%matchedLocations);
+
+    %matchedLocations = sortHashArray(%matchedLocations);
+    
+    printLocationHash (%matchedLocations);
+
+
     #flattenMatchedLocations(%matchedLocations);
 
     # How would user select?  essentially &x=7&y=3 ?? 
     #                         Or maybe &7,3 -- Keep it simple
+
 
 
 
