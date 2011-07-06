@@ -42,24 +42,40 @@ sub findPatternMatches {
     return @matchedLocations;
 }
 
-sub buildRegex {
-    # Assumes the selected locations are in ascending order
-    my (@locations) = @_;
-   
+sub buildRegex (\@\@) {
+    my ($matchedLocations, $userSelections) = @_;
+
+    if (scalar @$userSelections <= 0) {
+        return ".*";
+    }
+    
     # Outputted regex
     my $regEx;
-    
-    my $lastEnd = 0;
-    foreach my $l (@locations) {
-        if ($l->getStart() > $lastEnd) {
-            $regEx .= ".*";
-        } 
+
+    # End of the last match (within the string)
+    my $lastEnd = 0; 
+
+    foreach my $selection (@$userSelections) {
+        if ($selection >= 0) {
+            # Regex selection
+            my $location = @$matchedLocations[$selection];
+            if ($location->getStart() > $lastEnd) {
+                $regEx .= ".*";
+            }
+            $regEx .= $location->getRegex();
+            
+            $lastEnd = $location->getEnd() + 1;
         
-        $regEx .= $l->getRegex();
+        } else {
+            # Full text selection
+            my $location = @$matchedLocations[-int($selection)];
+            $regEx .= "(" . $location->getMatch() . ")";
+        
+            $lastEnd = $location->getEnd() + 1;
+        }
 
-        $lastEnd = $l->getEnd () + 1;
     }
-
+   
     return $regEx;
 }
 
@@ -135,14 +151,11 @@ sub main {
     }
 
     # Simulated selections
-    my @userSelections = ( 11, 12, 13, 14 );
+    # Negative selections indicate match the full given text
+    my @userSelections = ( -11, 12, 13, 14 );
 
-    my @selectedLocations = ();
-    foreach my $selection (@userSelections) {
-        push (@selectedLocations, $matchedLocations[$selection]);
-    }
     
-    my $regEx = buildRegex (@selectedLocations);
+    my $regEx = buildRegex (@matchedLocations, @userSelections);
     print $regEx . "\n";
 
     if ($testCase1 =~ m/$regEx/ig) {
