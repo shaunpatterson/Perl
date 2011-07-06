@@ -10,23 +10,11 @@ unless (caller) {
     main();
 }
 
-# Merge a hash of values into a hash of array values
-sub mergeHash(\%\%) {
-    my ($hash1, $hash2) = @_;
-   
-    foreach my $key (keys %$hash2) {
-        push(@{$hash1->{$key}}, $hash2->{$key});
-    }
-
-    return %$hash1;
-}
-
-
 sub findPatternMatches {
     my ($input, $name, $regex) = @_;
 
     # Location matches within the string
-    my %matchedLocations = ();
+    my @matchedLocations = ();
 
     # Total offset relative to the original input string
     my $totalOffset = 0;
@@ -44,11 +32,14 @@ sub findPatternMatches {
         # Now trim off the match
         $input = substr ($input, $-[0] + length ($1));
         
+        # Record the match 
+        push (@matchedLocations, Location->new($name, $regex, $matchedString, $start, $end));
+
         # Record the match position (relative to the original string of course)
-        $matchedLocations{$start} = Location->new($name, $regex, $matchedString, $start, $end);
+        #$matchedLocations{$start} 
     }
 
-    return %matchedLocations;
+    return @matchedLocations;
 }
 
 sub buildRegex {
@@ -72,36 +63,9 @@ sub buildRegex {
     return $regEx;
 }
 
-sub findMatches ($\%) {
-    # Inputs: 
-    #   input:    String to find matches upon
-    #   mappings: Hash map of mappings
-    # Returns: Hash{start of match} = [ Location Location Location ... ]
-    my ($input, $mappings) = @_;
-
-    my %matchedLocations = ();
-    
-    # Loop through the different match types
-    foreach my $nextMatchType (keys %$mappings) {
-        print "Next match type: $nextMatchType\n";
-        foreach my $nextMatchRegex (@{$mappings->{$nextMatchType}}) { 
-            my %nextLocations = findPatternMatches($input, $nextMatchType, $nextMatchRegex);
-            %matchedLocations = mergeHash (%matchedLocations, %nextLocations);
-        }
-    }
-
-    return %matchedLocations;
-}
 
 sub locationSortComparator ($$) {
     my ($a, $b) = @_;
-
-    # This is not perfect by any means -- sort by the length of the regular expression
-    #  This is so things like 'char' matches of "a" are before 'word' matches of "a"
-    my $regexComparison = length($a->getRegex()) - length($b->getRegex());
-    if ($regexComparison != 0) {
-        return $regexComparison;
-    }
 
     # Sort by position next
     my $positionComparison = $a->getStart() - $b->getStart();
@@ -118,110 +82,96 @@ sub locationSortComparator ($$) {
     return $sizeComparison;
 }
 
+sub findMatches ($\@) {
+    # Inputs: 
+    #   input:    String to find matches upon
+    #   mappings: List of hash maps of mappings
+    # Returns: Ordered list of match locations
+    my ($input, $mappingsList) = @_;
 
-sub flattenMatchedLocations (\%) {
-    my ($matchedLocations) = @_;
+    my @matchedLocations = ();
+    
+    foreach my $nextMappingHash (@$mappingsList) {
+        # Loop through the different match types
 
-    my @flattenedLocations = ();
+        # Matched locations for the next mapping type
+        my @nextMatchedLocations = ();
 
-    foreach my $key (keys %$matchedLocations) {
-        foreach my $location (@{$matchedLocations->{$key}}) {
-            push(@flattenedLocations, $location);
+        foreach my $nextMatchType (keys %$nextMappingHash) {
+            foreach my $nextMatchRegex (@{$nextMappingHash->{$nextMatchType}}) { 
+                @nextMatchedLocations = (@nextMatchedLocations, findPatternMatches ($input, $nextMatchType, $nextMatchRegex));    
+            }
         }
+
+        # Sort the next matched locations by starting position
+        @nextMatchedLocations = sort locationSortComparator @nextMatchedLocations;
+
+
+        # Record all the matched for the mapping
+        @matchedLocations = (@matchedLocations, @nextMatchedLocations);
     }
 
-    # And sort
-    return sort locationSortComparator @flattenedLocations;
-}
-
-
-
-sub sortHashArray {
-    my (%hash) = @_;
-
-    print "--------------------------------------\n";
-    print join (' ', sort {$a <=> $b} keys %hash) . "\n";
-
-    printLocationHash(\%hash);
-
-    foreach my $key (keys %hash) {
-        print "Key: $key" . "\n";
-        # Sort the array by size of match
-        $hash{$key} = sort {length($a->getMatch()) <=> length($b->getMatch())} @{$hash{$key}};
-    }
-
-    printLocationHash(\%hash);
-
-
-    return %hash;
-}
-
-sub printLocationHash (\%) {
-    my ($hash) = @_;
-
-    foreach my $key (sort { $a <=> $b } keys %$hash) {
-        print "$key:\n";
-        foreach my $location (@{$hash->{$key}}) {
-            print "   " . $location->toString () . "\n";
-        }
-    }
-
+    return @matchedLocations;
 }
 
 
 sub main {
     my $testCase1 = "This is a test";
 
-    my %mappings = ();
-
-    $mappings{'word'} = [ "([a-z]+)" ];
-    #$mappings{'char'} = [ "([a-z])" ];
-    #$mappings{'int'} = [ "([0-9]+)" ];
-    #$mappings{'mmyydd'} = 
+    # Encode the mapping precedence by offset within a matching array
+    my @mappingsList = (
+                            { "char" => [ "([a-z])"  ] },
+                            { "word" => [ "([a-z]+)" ] },
+                            { "int"  => [ "([0-9]+)" ] },
+                       );
 
     # Hash{start of match} = [ Location Location Location ... ]
-    my %matchedLocations = findMatches ($testCase1, %mappings);
+    my @matchedLocations = findMatches ($testCase1, @mappingsList);
+
+    foreach my $location (@matchedLocations) {
+        print $location->toString() . "\n";
+    }
+
+    return;
 
     # Simulated selections
 #    my @userSelections = [ 
 
 
-    printLocationHash (%matchedLocations);
+    #printLocationHash (%matchedLocations);
   
+    #my @selectedLocations = ();
+    #push (@selectedLocations, $matchedLocations{0}[0]);
+    #push (@selectedLocations, $matchedLocations{5}[0]);
+    #push (@selectedLocations, $matchedLocations{8}[0]);
+    #push (@selectedLocations, $matchedLocations{10}[0]);
 
+    #my $regEx = buildRegex (@selectedLocations);
 
-    my @selectedLocations = ();
-    push (@selectedLocations, $matchedLocations{0}[0]);
-    push (@selectedLocations, $matchedLocations{5}[0]);
-    push (@selectedLocations, $matchedLocations{8}[0]);
-    push (@selectedLocations, $matchedLocations{10}[0]);
+    #print $regEx . "\n";
 
-    my $regEx = buildRegex (@selectedLocations);
+    #if ($testCase1 =~ m/$regEx/ig) {
+        #print "Num matches: " . scalar @- . "\n";
+        #print "Success!\n";
 
-    print $regEx . "\n";
-
-    if ($testCase1 =~ m/$regEx/ig) {
-        print "Num matches: " . scalar @- . "\n";
-        print "Success!\n";
-
-        foreach my $match (@-) {
-            print "$match\n";
-        }
-    }
+        #foreach my $match (@-) {
+            #print "$match\n";
+        #}
+    #}
 
     
-    # %matchedLocations = sortHashArray(%matchedLocations);
+    ## %matchedLocations = sortHashArray(%matchedLocations);
     
-    my @finalLocations = flattenMatchedLocations(%matchedLocations);
+    #my @finalLocations = flattenMatchedLocations(%matchedLocations);
 
-    my $i = 0;
-    foreach my $location (@finalLocations) {
-        print "$i: " . $location->toString() . "\n";
-        $i++;
-    }
+    #my $i = 0;
+    #foreach my $location (@finalLocations) {
+        #print "$i: " . $location->toString() . "\n";
+        #$i++;
+    #}
 
-    # How would user select?  essentially &x=7&y=3 ?? 
-    #                         Or maybe &7,3 -- Keep it simple
+    ## How would user select?  essentially &x=7&y=3 ?? 
+    ##                         Or maybe &7,3 -- Keep it simple
 
 
 
