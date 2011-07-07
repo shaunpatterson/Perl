@@ -73,16 +73,46 @@ sub test2 {
 }
 
 sub test3 {
+   my $testCase = "/20.10.1.1/hd/su/staging/packaging/";
+
+   my @mappingsList = Match::getGeneralMappings();
+
+   my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+
+   Match::printLocations(@matchedLocations);
+}
+
+sub test4 {
+    my $testCase = "Test one two three";
+
+    my @mappingsList = Match::getGeneralMappings();
+
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+    my %hashedLocations = Match::locationsToHash (@matchedLocations);
+
+    Match::printLocations(@matchedLocations);
+    Match::printHashedLocations(%hashedLocations);
+
+    my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
+    print "Max depth: " . scalar @maxDepthLocations . "\n";
+    Match::printLocations (@maxDepthLocations);
+  
+    print "-----------------------\n";
+
+    Match::printLocations(@matchedLocations);
     
+    # Select 22: var:(?:[a-z][a-z0-9_]*):two:9:11
+    my @userSelections = ( 22 );
+    my $regEx = Match::buildRegex(@matchedLocations, @userSelections);
+    print "$regEx\n";
+        
+
 }
 
 
-sub main {
-    my $test = "11-27-1983";
 
-    if ($test =~ m/(?:(\d+)-(\d+)-(\d+))/) {
-        print "Match! $1 $2\n";
-    }
+sub main {
+    test4();
 
     # All test cases should return non-zero if passed
 #    test1() || print "Failed test1\n";

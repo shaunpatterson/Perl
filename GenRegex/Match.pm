@@ -24,11 +24,6 @@ use Location;
 use strict;
 use warnings;
 
-
-unless (caller) {
-    main();
-}
-
 sub getGeneralMappings {
     # Encode the mapping precedence by offset within a matching array
     my @mappingsList = (
@@ -41,8 +36,9 @@ sub getGeneralMappings {
                             { "month" => [ "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)" ] },
                             { "year"  => [ "(?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] }, 
                             { "string" => [ '".*?"' , '\\\'.*?\\\'' ] },
-                            { "username" => [ '\b[a-z][a-z0-9_-]{2,15}\b' ] },
+                            { "username" => [ '[a-z][a-z0-9_-]{2,15}' ] },
                             { "ddmmmyyy" => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1}))[-:\\/.](?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[-:\\/.](?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] },
+                            { "unixpath" => [ "(?:\\/[\\w\\.\\-]+)+" ] },
                             { "ipaddress" => [ "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?![\\d]" ] },
                        );
 
@@ -74,9 +70,6 @@ sub findPatternMatches {
         
         # Record the match 
         push (@matchedLocations, Location->new($name, $regex, $matchedString, $start, $end));
-
-        # Record the match position (relative to the original string of course)
-        #$matchedLocations{$start} 
     }
 
     return @matchedLocations;
@@ -100,7 +93,7 @@ sub buildRegex (\@\@) {
             # Regex selection
             my $location = @$matchedLocations[$selection];
             if ($location->getStart() > $lastEnd) {
-                $regEx .= ".*";    # Non-greedy
+                $regEx .= ".*?";    # Non-greedy
             }
             $regEx .= "(" . $location->getRegex() . ")" ;
             
@@ -122,12 +115,6 @@ sub buildRegex (\@\@) {
 
 sub locationSortComparator ($$) {
     my ($a, $b) = @_;
-
-    # Sort by position next
-    my $positionComparison = $a->getStart() - $b->getStart();
-    if ($positionComparison != 0) {
-        return $positionComparison;
-    }
     
     # And by the size of the match
     my $sizeComparison = length($a->getMatch()) - length($b->getMatch());
@@ -136,6 +123,15 @@ sub locationSortComparator ($$) {
     }
 
     return $sizeComparison;
+
+    # Sort by position next
+    my $positionComparison = $a->getStart() - $b->getStart();
+    if ($positionComparison != 0) {
+        return $positionComparison;
+    }
+    
+    return $positionComparison;
+
 }
 
 sub findMatches ($\@) {
@@ -167,9 +163,46 @@ sub findMatches ($\@) {
         @matchedLocations = (@matchedLocations, @nextMatchedLocations);
     }
 
-    return @matchedLocations;
+    return sort locationSortComparator (@matchedLocations);
 }
 
+
+
+
+# Convert an array of matched locations to a hash of:
+# hash{start_of_match} = ( match1 match2 match3 )
+sub locationsToHash (\@) {
+    my ($matchedLocations) = @_;
+
+    my %hashedLocations;
+    
+    foreach my $location (@$matchedLocations) {
+        push (@{$hashedLocations{$location->getStart()}}, $location);
+    }
+
+    return %hashedLocations;
+}
+
+# Determine the max "depth" of a search.  That is, 
+#  what is the maximum number of regex options for each 
+#  individual character.  Return the list at that locations
+sub getMaxDepthLocations (\%) {
+    my ($hashedLocations) = @_;
+
+    my $maxDepth = -1;
+    my $maxDepthLocation = -1;
+    foreach my $start (sort { $a <=> $b } keys %$hashedLocations) {
+        my $depth = scalar @{$hashedLocations->{$start}};
+        if ($maxDepth == -1 or $depth > $maxDepth) {
+            $maxDepth = $depth;
+            $maxDepthLocation = $start;
+        }
+    }
+
+    return @{$hashedLocations->{$maxDepthLocation}};
+}
+
+# Print an array of locations
 sub printLocations (\@) {
     my ($matchedLocations) = @_;
 
@@ -180,36 +213,15 @@ sub printLocations (\@) {
     }
 }
 
-
-sub main {
-    #my $testCase1 = "05:Jul:2011 \'This is an Example!\' 121.1.2.3";
-    my $testCase1 = "sxp1309";
-
-    # Encode the mapping precedence by offset within a matching array
-    my @mappingsList = getGeneralMappings();
-
-    # Hash{start of match} = [ Location Location Location ... ]
-    my @matchedLocations = findMatches ($testCase1, @mappingsList);
-
-
-    printLocations (@matchedLocations);
-
-    # Simulated selections
-    # Negative selections indicate match the full given text
-    my @userSelections = ( 11 );
-
-    my $regEx = buildRegex (@matchedLocations, @userSelections);
-    print $regEx . "\n";
-
-    if ($testCase1 =~ m/$regEx/ig) {
-        print "Num matches: " . scalar @- . "\n";
-        print "Success!\n";
-
-        foreach my $match (@-) {
-            print "$match\n";
+# Print a hash of array of matches
+sub printHashedLocations (\%) {
+    my ($hashedLocations) = @_;
+    foreach my $start (sort { $a <=> $b } keys %$hashedLocations) {
+        print "$start\n";
+        foreach my $location (@{$hashedLocations->{$start}}) {
+            print "   " . $location->toString () . "\n";
         }
     }
-
 }
 
 1;

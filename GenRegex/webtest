@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+
+use Match;
+
+print "Content-type: text/html\n\n";
+
+print "<html><body>";
+
+my $testCase = "This is an example";
+
+my @mappingsList = Match::getGeneralMappings ();
+
+my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+
+print "<pre>";
+Match::printLocations (@matchedLocations);
+print "</pre>";
+
+my $numCols = length($testCase);
+
+print <<END;
+
+    <table border=0 cellpadding=5 cellspacing=5 bgcolor='green'>
+        <tr>
+            <td valign=top>
+            <table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
+                <tr><td valign=top colspan=2>
+                    <table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
+                       <tr><td valign=top colspan=2>
+                           <table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
+                                <tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
+                                <tr>
+                                    <td>c</td>
+                                    <td>T</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+
+                        <tr>
+                            <td>w</td>
+                            <td>T</td>
+                        </tr>
+                    </table>
+
+                </td></tr>
+
+                <tr>
+                    <td>var</td>
+                    <td>T</td>
+                </tr>
+            </table>
+            
+            <table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
+                <tr><td valign=top colspan=2>
+                    <table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
+                       <tr><td valign=top colspan=2>
+                           <table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
+                                <tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
+                                <tr>
+                                    <td>c</td>
+                                    <td>T</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+
+                        <tr>
+                            <td>w</td>
+                            <td>T</td>
+                        </tr>
+                    </table>
+
+                </td></tr>
+
+                <tr>
+                    <td>var</td>
+                    <td>T</td>
+                </tr>
+            </table>
+        </td>
+        </tr>
+                
+        <tr>
+            <td>var</td>
+            <td>T</td>
+        </tr>
+    </table>
+
+
+END
+
+print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
+    print "<table border=1 cellpadding=5 cellspacing=5 bordercolor='black'>";
+        print "<tr><td valign=top bgcolor='blue'>";
+            print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
+                print "<table border=1 cellpadding=5 cellspacing=5 bordercolor='red'>";
+                    print "<tr><td valign=top bgcolor='brown'>";
+                        print "<table border=0 cellpadding=5 cellspacing=5>";
+                            print "<tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cc16117 bordercolor='#c16117'>";
+                            print "<tr><td valign=top bgcolor='#c16117' class=Cc16117>";
+                                print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
+                                    print "<table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c4986f'>";
+                                        print "<tr><td valign=top bgcolor='purple'>";  # PURPLE BOX
+                                            print "<table border=0 cellpadding=5>";
+                                                print "<tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>T</font></td></tr>";  # WHITE BOX
+                                                print "<tr><td valign=top>";
+                                                    print "<table width='100%' border=0 cellspacing=5 cellpadding=5>";
+                                                        print "<tr><td align=left ><a href='?s=T&3'>c</a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=T&-3' title='Match against T'><font color='#0000cc' size=2>T</font></a></td></tr>";
+                                                    print "</table></td></tr></table></td></tr>";
+                                            print "</table>";
+                                        print "</td></tr>";
+                                        print "<tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&2' title='Match against Any Single Word Character (Not
+Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=T&-2' title='Match against T'><font color='#0000cc' size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&1' title='Match against Variable Name'><font color='#00000c' >var</font></a></td><td align=right valign=bottom><a href='?s=T&-1' title='Match against
+T'><font color='#0000cc' size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ></td><td align=right valign=bottom></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c'
+></font></a></td><td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2></font></a></td></tr></table></td></tr></table>";
+
+print "</html></body>";
