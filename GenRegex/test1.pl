@@ -25,16 +25,20 @@ sub test1 {
         return 0;
     }
 
-    my @userSelections = ( 18, 19, 20, 21 );
+    Match::printLocations (@matchedLocations);
+
+    my @userSelections = ( 1, 7, 11, 15 );
     my $regEx = Match::buildRegex (@matchedLocations, @userSelections);
     print "$regEx\n";
 
     unless ("Im gonna need about treefitty" =~ m/$regEx/) {
+        print "Treefitty test failed\n";
         return 0;
     }
 
     if ("1234 blah BLAH 567" =~ m/$regEx/) {
         # Currently failing.  Better regex generation needed
+        print "Erroneously matched $1 $2 $3 $4\n";
         return 0;
     }
 
@@ -94,29 +98,60 @@ sub test4 {
     Match::printHashedLocations(%hashedLocations);
 
     my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
-    print "Max depth: " . scalar @maxDepthLocations . "\n";
-    Match::printLocations (@maxDepthLocations);
   
-    print "-----------------------\n";
-
-    Match::printLocations(@matchedLocations);
-    
     # Select 22: var:(?:[a-z][a-z0-9_]*):two:9:11
-    my @userSelections = ( 22 );
+    # This should come back with 2 'unintersting' matches
+    #  of a word
+    my @userSelections = ( 18 );
     my $regEx = Match::buildRegex(@matchedLocations, @userSelections);
+
+    if ($regEx ne "(?:[a-z][a-z0-9_]*).*?(?:[a-z][a-z0-9_]*).*?([a-z][a-z0-9_]*)") {
+        print "Not expected RegEx: $regEx\n";
+        return 0;
+    }
+
+
     print "$regEx\n";
         
+
+}
+
+sub test5 {
+    my $testCase = "Test one two three";
+
+    my @mappingsList = Match::getGeneralMappings();
+
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+    my %hashedLocations = Match::locationsToHash (@matchedLocations);
+
+    Match::printLocations(@matchedLocations);
+#    Match::printHashedLocations(%hashedLocations);
+
+    my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
+  
+    my @userSelections = ( 2, 18 );
+    my $regEx = Match::buildRegex(@matchedLocations, @userSelections);
+
+    print "$regEx\n";
+
+    if ($regEx ne "([a-z]+).*?(?:[a-z][a-z0-9_]*).*?([a-z][a-z0-9_]*)") {
+        print "Not expected RegEx: $regEx\n";
+        return 0;
+    }
+
 
 }
 
 
 
 sub main {
-    test4();
 
     # All test cases should return non-zero if passed
-#    test1() || print "Failed test1\n";
-#    test2() || print "Failed test2\n";
+    test1() || print "Failed test1\n";
+    #test2() || print "Failed test2\n";
+    #test3() || print "Failed test3\n";
+    #test4() || print "Failed test4\n";
+    #test5() || print "Failed test5\n";
 }
 
 1;
