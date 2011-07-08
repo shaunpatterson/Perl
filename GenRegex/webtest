@@ -4,113 +4,297 @@ use Match;
 
 print "Content-type: text/html\n\n";
 
-print "<html><body>";
-
-my $testCase = "This is an example";
-
-my @mappingsList = Match::getGeneralMappings ();
-
-my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
-
-print "<pre>";
-Match::printLocations (@matchedLocations);
-print "</pre>";
-
-my $numCols = length($testCase);
+print "<html><head>";
 
 print <<END;
 
-    <table border=0 cellpadding=5 cellspacing=5 bgcolor='green'>
-        <tr>
-            <td valign=top>
-            <table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
-                <tr><td valign=top colspan=2>
-                    <table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
-                       <tr><td valign=top colspan=2>
-                           <table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
-                                <tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
-                                <tr>
-                                    <td>c</td>
-                                    <td>T</td>
-                                </tr>
-                            </table>
-                        </td></tr>
+<style type="text/css">
+   
+    #outside 
+    {
+        height:auto;
+        background:blue;
+    }
 
-                        <tr>
-                            <td>w</td>
-                            <td>T</td>
-                        </tr>
-                    </table>
+    .purple {
+        background:purple;
+    }
 
-                </td></tr>
+    .level1 {
+        width:100px;
+    }
+    .level2 {
+        margin:5px;
+        width:40px;
+    }
 
-                <tr>
-                    <td>var</td>
-                    <td>T</td>
-                </tr>
-            </table>
-            
-            <table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
-                <tr><td valign=top colspan=2>
-                    <table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
-                       <tr><td valign=top colspan=2>
-                           <table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
-                                <tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
-                                <tr>
-                                    <td>c</td>
-                                    <td>T</td>
-                                </tr>
-                            </table>
-                        </td></tr>
+    #match {
+        float:left;
+        height:auto;
+    }
 
-                        <tr>
-                            <td>w</td>
-                            <td>T</td>
-                        </tr>
-                    </table>
+    #lower {
+        width:100%;
+        height:auto;
+        background:lightgreen;
+    }
 
-                </td></tr>
+    #text {
+        text-align: center;
+        width:100%;
+        height:auto;
+        background:lightgray;
+    }
 
-                <tr>
-                    <td>var</td>
-                    <td>T</td>
-                </tr>
-            </table>
-        </td>
-        </tr>
-                
-        <tr>
-            <td>var</td>
-            <td>T</td>
-        </tr>
-    </table>
+    .left {
+        width:50%;
+        height:auto;
+        float:left;
+        background:inherit;
+        text-align: center;
+    }
+    .right {
+        width:50%;
+        height:auto;
+        float:right;
+        background:inherit;
+        text-align: center;
+    }
 
+</style>
 
 END
 
-print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
-    print "<table border=1 cellpadding=5 cellspacing=5 bordercolor='black'>";
-        print "<tr><td valign=top bgcolor='blue'>";
-            print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
-                print "<table border=1 cellpadding=5 cellspacing=5 bordercolor='red'>";
-                    print "<tr><td valign=top bgcolor='brown'>";
-                        print "<table border=0 cellpadding=5 cellspacing=5>";
-                            print "<tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cc16117 bordercolor='#c16117'>";
-                            print "<tr><td valign=top bgcolor='#c16117' class=Cc16117>";
-                                print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>";
-                                    print "<table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c4986f'>";
-                                        print "<tr><td valign=top bgcolor='purple'>";  # PURPLE BOX
-                                            print "<table border=0 cellpadding=5>";
-                                                print "<tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>T</font></td></tr>";  # WHITE BOX
-                                                print "<tr><td valign=top>";
-                                                    print "<table width='100%' border=0 cellspacing=5 cellpadding=5>";
-                                                        print "<tr><td align=left ><a href='?s=T&3'>c</a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=T&-3' title='Match against T'><font color='#0000cc' size=2>T</font></a></td></tr>";
-                                                    print "</table></td></tr></table></td></tr>";
-                                            print "</table>";
-                                        print "</td></tr>";
-                                        print "<tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&2' title='Match against Any Single Word Character (Not
-Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=T&-2' title='Match against T'><font color='#0000cc' size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&1' title='Match against Variable Name'><font color='#00000c' >var</font></a></td><td align=right valign=bottom><a href='?s=T&-1' title='Match against
-T'><font color='#0000cc' size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ></td><td align=right valign=bottom></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c'
-></font></a></td><td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2></font></a></td></tr></table></td></tr></table>";
+
+print "</head><body>";
+
+#my $testCase = "This is an example";
+
+#my @mappingsList = Match::getGeneralMappings ();
+
+#my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+
+#print "<pre>";
+#Match::printLocations (@matchedLocations);
+#print "</pre>";
+
+#my $numCols = length($testCase);
+
+print <<END;
+
+    <div id='outside'>
+        <div id='match' class='purple level1'>
+            <div> 
+            <div id='match' class='purple level2'>
+                <div id='text'><center>T</center></div>
+                <div id='lower'>
+                    <div class='left'>c</div><div class='right'>T</div>
+                </div>
+            </div>
+            
+            <div id='match' class='purple level2'>
+                <div id='text'><center>e</center></div>
+                <div id='lower'>
+                    <div class='left'>c</div><div class='right'>e</div>
+                </div>
+            </div>
+            </div>
+
+            <div id='lower'>
+            <div class='left'>Var</div><div class='right'>Te</div>
+            </div>
+        </div>
+                
+    </div>
+
+END
+
+
+#print <<END;
+
+    #<table border=0 cellpadding=5 cellspacing=5 bgcolor='green'>
+        #<tr>
+            #<td valign=top>
+            #<table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
+                #<tr><td valign=top colspan=2>
+                    #<table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
+                       #<tr><td valign=top colspan=2>
+                           #<table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
+                                #<tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
+                                #<tr>
+                                    #<td>c</td>
+                                    #<td>T</td>
+                                #</tr>
+                            #</table>
+                        #</td></tr>
+
+                        #<tr>
+                            #<td>w</td>
+                            #<td>T</td>
+                        #</tr>
+                    #</table>
+
+                #</td></tr>
+
+                #<tr>
+                    #<td>var</td>
+                    #<td>T</td>
+                #</tr>
+            #</table>
+            
+            #<table border=0 cellpadding=5 cellspacing=5 bgcolor='red'>
+                #<tr><td valign=top colspan=2>
+                    #<table border=0 cellpadding=5 cellspacing=5 bgcolor='orange'>
+                       #<tr><td valign=top colspan=2>
+                           #<table border=0 cellpadding=5 cellspacing=5 bgcolor='purple'> 
+                                #<tr><td valign=top align=center colspan=2 bgcolor='white'>T</td></tr>
+                                #<tr>
+                                    #<td>c</td>
+                                    #<td>T</td>
+                                #</tr>
+                            #</table>
+                        #</td></tr>
+
+                        #<tr>
+                            #<td>w</td>
+                            #<td>T</td>
+                        #</tr>
+                    #</table>
+
+                #</td></tr>
+
+                #<tr>
+                    #<td>var</td>
+                    #<td>T</td>
+                #</tr>
+            #</table>
+        #</td>
+        #</tr>
+                
+        #<tr>
+            #<td>var</td>
+            #<td>T</td>
+        #</tr>
+    #</table>
+
+
+#END
+
+#print <<END;
+
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>
+    #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='red'>       <!-- Outside table -->
+        #<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                 <!-- Table inside the outside table -->
+
+
+            #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='blue'>      <!-- Word table -->
+                #<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                 <!-- Table inside the word table -->
+                    #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='purple'>    <!-- Var table -->
+                        #<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                 <!-- Table outside the w character table -->
+                            #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='green'>     <!-- w character table -->
+                                #<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                 <!-- Table outside the character table -->
+
+
+                                    #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='gray'>      <!-- character table -->
+                                        
+                                        #<!-- Here's where things start to change -->
+                                        #<table border=0 cellpadding=5>       <!-- Notice no cell spacing?? -->
+                                            
+                                            #<tr><td valign=top align=center bgcolor='#ffffff'>T</td></tr>
+                                            #<tr><td valign=top>
+                                                #<table width='100%' border=0 cellspacing=5 cellpadding=5>
+                                                    #<tr><td align=left >c</td><td>&nbsp CENTER</td>
+                                                        #<td align=right valign=bottom>T</td>
+                                                    #</tr>
+                                                #</table>
+                                            #</td></tr>
+                                        #</table>
+
+                                    #</tr></td></table>                                          <!-- end of character table -->
+
+                                    #<!-- Lower text of the character table -- Note this is in the table "outside" the character table -->
+                                    #<tr><td valign=top colspan=1>
+                                    #<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td align=left>w</td><td align=right valign=bottom>T</td></tr></table>
+                                    #</tr></td>
+                                #</tr></td></table>                                              <!-- End table outside the character table -->
+                            #</tr></td></table>                                                  <!-- End outside w character table -->
+                                    
+                            #</tr><tr><td valign=top colspan=1>
+                            #<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td align=left>w</td><td align=right valign=bottom>T</td></tr></table>
+
+                        #</td></tr></table>                                                      <!-- end var table -->
+                            
+                        #</tr><tr><td valign=top colspan=1>
+                #</td></tr></table>                                                              <!-- end table inside the word table -->
+                
+                #<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td align=left>w</td><td align=right valign=bottom>T</td></tr></table>
+            #</td></tr></table>                                                                  <!-- end word table -->
+
+
+        #</td></tr></table>  <!-- End table inside the outside table -->
+    #</td></tr></table>  <!-- End outside table -->
+#</td></tr></table>
+#END
+
+#print <<END;
+
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='red'>           <!-- Outside table -->
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                         <!-- Table inside the outside table -->
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='blue'>          <!-- Word table -->
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                         <!-- Table inside the word table -->
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='purple'>        <!-- Var table -->
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                         <!-- Table outside the w character table -->
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='green'>         <!-- w character table -->
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>                         <!-- Table outside the character table -->
+    #<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='gray'>      <!-- character table -->
+        #<table border=0 cellpadding=5>  <!-- Table inside the character table (note no background color) -->
+            #<tr><td valign=top align=center bgcolor='#ffffff'>T</td></tr>
+            #<tr><td valign=top>
+                #<table width='100%' border=0 cellspacing=5 cellpadding=5>
+                    #<tr><td align=left >c</td><td>&nbsp</td>
+                        #<td align=right valign=bottom>T</td>
+                    #</tr>
+                #</table>
+            #</td></tr>
+        #</table>
+    #</td></tr>
+    #</table>
+#</td></tr>
+#<tr><td valign=top colspan=1>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td align=left>w</td><td align=right valign=bottom>T</td></tr>
+#</table></td></tr>  <!-- done to here -->
+#</table></td></tr>  <!-- end of outside character table>
+#</table>            <!-- end of w charater table>
+#</td><td valign=top>
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='#d1bc5d' >
+#<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>
+#<table border=1 cellpadding=5 cellspacing=5><tr><td valign=top bgcolor='#f74125' >
+#<table border=0 cellpadding=5><tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>e</font></td></tr><tr><td valign=top>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Te&6' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Te&-6' title='Match against e'><font color='#0000cc' size=2>e</font></a></td></tr>
+#</table></td></tr>
+#</table></td></tr>
+#</table></td></tr><tr><td valign=top colspan=1>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Te&4' title='Match against Any Single Word Character (Not Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=Te&-4' title='Match against e'><font color='#0000cc' size=2>e</font></a></td></tr>
+#</table></td></tr>
+#</table></td></tr>
+#</table></td></tr><tr><td valign=top colspan=2>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Te&2' title='Match against Variable Name'><font color='#00000c' >var</font></a></td><td align=right valign=bottom><a href='?s=Te&-2' title='Match against Te'><font color='#0000cc' size=2>Te</font></a></td></tr>
+#</table></td></tr>
+#</table></td></tr>
+#</table></td></tr><tr><td valign=top colspan=1>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Te&1' title='Match against Word'><font color='#00000c' >word</font></a></td><td align=right valign=bottom><a href='?s=Te&-1' title='Match against Te'><font color='#0000cc' size=2>Te</font></a></td></tr>
+#</table></td></tr>
+#</table></td></tr>
+#</table></td></tr><tr><td valign=top colspan=1>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ></td><td align=right valign=bottom></td></tr>
+#</table></td></tr>
+#</table></td></tr>
+#</table></td></tr><tr><td valign=top colspan=1>
+#<table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Te&-9999' title='Match against '><font color='#00000c' ></font></a></td><td align=right valign=bottom><a href='?s=Te&9999' title='Match against '><font color='#0000cc' size=2></font></a></td></tr>
+#</table></td></tr>
+#</table>
+#END
+
 
 print "</html></body>";

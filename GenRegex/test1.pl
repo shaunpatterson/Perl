@@ -28,7 +28,7 @@ sub test1 {
     Match::printLocations (@matchedLocations);
 
     my @userSelections = ( 1, 7, 11, 15 );
-    my $regEx = Match::buildRegex (@matchedLocations, @userSelections);
+    my $regEx = Match::buildRegex ($testCase, @matchedLocations, @userSelections);
     print "$regEx\n";
 
     unless ("Im gonna need about treefitty" =~ m/$regEx/) {
@@ -61,15 +61,21 @@ sub test2 {
         return 0;
     }
 
-    my @userSelections = ( -21, 18, 22, 19, 23, 20, 24 );
-    my $regEx = Match::buildRegex (@matchedLocations, @userSelections);
+    Match::printLocations (@matchedLocations);
+
+    # Match "Test" completely
+    # Then match the other words
+    my @userSelections = ( -1, 8, 13, 18 );
+    my $regEx = Match::buildRegex ($testCase, @matchedLocations, @userSelections);
     print "$regEx\n";
 
     unless ("This xxx yyy zzz" =~ m/$regEx/) {
+        print "Failed on: This xxx yyy zzz\n";
         return 0;
     }
 
     if ("Im gonna need about treefitty" =~ m/$regEx/) {
+        print "Failed on South Park\n";
         return 0;
     }
 
@@ -103,10 +109,10 @@ sub test4 {
     # This should come back with 2 'unintersting' matches
     #  of a word
     my @userSelections = ( 18 );
-    my $regEx = Match::buildRegex(@matchedLocations, @userSelections);
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
 
     if ($regEx ne "(?:[a-z][a-z0-9_]*).*?(?:[a-z][a-z0-9_]*).*?([a-z][a-z0-9_]*)") {
-        print "Not expected RegEx: $regEx\n";
+        print "$regEx\nNot expected regex\n";
         return 0;
     }
 
@@ -130,24 +136,60 @@ sub test5 {
     my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
   
     my @userSelections = ( 2, 18 );
-    my $regEx = Match::buildRegex(@matchedLocations, @userSelections);
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
 
     print "$regEx\n";
 
     if ($regEx ne "([a-z]+).*?(?:[a-z][a-z0-9_]*).*?([a-z][a-z0-9_]*)") {
-        print "Not expected RegEx: $regEx\n";
+        print "$regEx\nNot expected regex\n";
         return 0;
     }
 
+    return 1;
+}
+
+sub test6 {
+    my $testCase = "This This is a test";
+
+    my @mappingsList = Match::getGeneralMappings();
+
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+    my %hashedLocations = Match::locationsToHash (@matchedLocations);
+
+    Match::printLocations(@matchedLocations);
+
+    # Match the second "This" completely
+    my @userSelections = ( -11 );
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
+
+    print "$regEx\n";
+
+    if ($regEx ne "(?:This).*?(This)") {
+        print "$regEx\nNot expected regex\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+sub test7 {
+    my $testCase = "Te";
+
+    my @mappingsList = Match::getGeneralMappings();
+
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+
+    Match::printLocations(@matchedLocations);
 
 }
 
 
-
 sub main {
+    
+    test7();
 
     # All test cases should return non-zero if passed
-    test1() || print "Failed test1\n";
+    #test1() || print "Failed test1\n";
     #test2() || print "Failed test2\n";
     #test3() || print "Failed test3\n";
     #test4() || print "Failed test4\n";

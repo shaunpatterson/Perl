@@ -28,6 +28,7 @@ sub getGeneralMappings {
     # Encode the mapping precedence by offset within a matching array
     my @mappingsList = (
                             { "char" => [ "."  ] },
+                            { "w"   => [ "[a-z]" ] },
                             { "ws"   => [ "\\s+" ] },
                             { "var"  => [ "[a-z][a-z0-9_]*" ] },
                             { "word" => [ "[a-z]+" ] },
@@ -75,9 +76,9 @@ sub findPatternMatches {
     return @matchedLocations;
 }
 
-sub buildRegex (\@\@) {
+sub buildRegex ($\@\@) {
     # Assumes user selections are from "left to right"
-    my ($matchedLocations, $userSelections) = @_;
+    my ($input, $matchedLocations, $userSelections) = @_;
 
     if (scalar @$userSelections <= 0) {
         return ".*";
@@ -112,7 +113,20 @@ sub buildRegex (\@\@) {
     my $lastEnd = -1;
 
     foreach my $selection (@$userSelections) {
-        my $location = @$matchedLocations[$selection];
+        my $location;
+        my $matchContext;
+        my $matchType;
+        if ($selection < 0) {
+            # Negatives correspond to absolute matches
+            $location = @$matchedLocations[-$selection];
+            $matchContext = $location->getMatch();
+            $matchType = 1;  # Match the text
+        } else {
+            # Normal, match is by the regex
+            $location = @$matchedLocations[$selection];
+            $matchContext = $location->getRegex();
+            $matchType = 0;  # Match the regex
+        }
 
         # Mark characters as matched
         for (my $i = $location->getStart(); $i <= $location->getEnd(); $i++) {
@@ -120,15 +134,16 @@ sub buildRegex (\@\@) {
             $matchedPositions{$i} = "";
         }
         # Fill the start with the regular expression match
-        $matchedPositions{$location->getStart()} = "(" . $location->getRegex () . ")";
+        $matchedPositions{$location->getStart()} = "(" . $matchContext . ")";
         
         # Look behind to see if the same regular expression could be
         #  matched anywhere else
         my @possiblePrevMatches = (); 
-        foreach my $possibleMatch (@{$hashedRegexs{$location->getRegex()}}) {
-            if ($possibleMatch < $location->getStart ()) {
-                print "Possible match added: $possibleMatch\n";
-                push(@possiblePrevMatches, $possibleMatch);
+        my @poss = findPatternMatches ($input, "", $matchContext);
+        foreach my $possibleMatch (@poss) {
+            if ($possibleMatch->getStart() < $location->getStart ()) {
+                print "Possible match added: " . $possibleMatch->getStart() . "\n";
+                push(@possiblePrevMatches, $possibleMatch->getStart());
             }
         }
         if (scalar @possiblePrevMatches) {
@@ -139,14 +154,23 @@ sub buildRegex (\@\@) {
         #  look at the matched positions from start of match to end of match.
         #  If all spaces are "unoccupied" (ie, the keys do not exist) then insert 
         foreach my $possibleMatch (@possiblePrevMatches) {
-            #print "Possible match at $possibleMatch\n";
+            print "Possible match at $possibleMatch\n";
             my $occupied = 0;
 
             # Find the match at the location 
             my $matchLocation;
             foreach my $matchedLocationSearch (@$matchedLocations) {
-                if ($matchedLocationSearch->getStart() == $possibleMatch and
-                    $matchedLocationSearch->getRegex() eq $location->getRegex()) {
+                if ((
+                        $matchType == 0 and
+                        $matchedLocationSearch->getStart() == $possibleMatch and
+                        $matchedLocationSearch->getRegex() eq $location->getRegex()
+                    ) or
+                    (
+                        $matchType == 1 and
+                        $matchedLocationSearch->getStart() == $possibleMatch and
+                        $matchedLocationSearch->getMatch() eq $location->getMatch()
+                    ))
+                {
 
                     for (my $i = $matchedLocationSearch->getStart(); $i <= $matchedLocationSearch->getEnd(); $i++) {
                         if (exists ($matchedPositions{$i})) {
@@ -163,7 +187,11 @@ sub buildRegex (\@\@) {
                             $matchedPositions{$i} = "";
                         }
                         # Fill the start with the regular expression match
-                        $matchedPositions{$matchedLocationSearch->getStart()} = "(?:" . $matchedLocationSearch->getRegex () . ")";
+                        if ($matchType == 0) {
+                            $matchedPositions{$matchedLocationSearch->getStart()} = "(?:" . $matchedLocationSearch->getRegex () . ")";
+                        } else {
+                            $matchedPositions{$matchedLocationSearch->getStart()} = "(?:" . $matchedLocationSearch->getMatch () . ")";
+                        }
                     }
                 }
             }
