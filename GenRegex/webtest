@@ -8,8 +8,8 @@ main ();
 sub headerTable {
     my ($body, $left, $right) = @_;
 
-    my $output = "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top>$body";
-    $output .= "</td></tr><tr><td valign=top colspan=1> <table width='100%' border=0 cellspacing=5 cellpadding=5>";
+    my $output = "<table border=0 cellpadding=2 cellspacing=2><tr><td valign=top>$body";
+    $output .= "</td></tr><tr><td valign=top colspan=1> <table width='100%' border=0 cellspacing=2 cellpadding=2>";
     $output .= "<tr> <td align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c' >$left</font></a> </td> <td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2>$right</font></a> </td> </tr> </table> </td> </tr> </table>";
 
     return $output;
@@ -18,23 +18,35 @@ sub headerTable {
 sub headerTable1 (\@$$) {
     my ($body, $left, $right) = @_;
 
-    my $output = "<table border=0 cellpadding=5 cellspacing=5><tr>";
+    my $output = "<table border=0 cellpadding=2 cellspacing=2><tr>";
     
     foreach my $b (@$body) {
         $output .= "<td valign=top>$b</td>";
     }
-    $output .= "</tr><tr><td valign=top colspan=" . scalar @$body . "> <table width='100%' border=0 cellspacing=5 cellpadding=5>";
+    $output .= "</tr><tr><td valign=top colspan=" . scalar @$body . "> <table width='100%' border=0 cellspacing=2 cellpadding=2>";
     $output .= "<tr> <td align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c' >$left</font></a> </td> <td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2>$right</font></a> </td> </tr> </table> </td> </tr> </table>";
 
     return $output;
 }
 
+sub fillerTable {
+    my ($body) = @_;
+
+    ## basically an inner table 
+    my $output = "<table border=1 cellpadding=2 cellspacing=2>";
+    $output .= "<tr>";
+    $output .= "<td valign=top>$body</td>";
+    $output .= "</tr></table>";
+
+    return headerTable(innerTable1 ($body, ""), "", "");
+}
+
 sub innerTable1 ($$) {
     my ($body, $color) = @_;
 
-    my $output = "<table border=1 cellpadding=5 cellspacing=5 class=Cc0c0c0 bordercolor='#c0c0c0'>";
+    my $output = "<table border=1 cellpadding=2 cellspacing=2 class=Cc0c0c0 bordercolor='#c0c0c0'>";
     $output .= "<tr>";
-    $output .= "<td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>TEST</td>";
+    $output .= "<td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>$body</td>";
     $output .= "</tr></table>";
 
     return $output;
@@ -50,7 +62,7 @@ sub innerTable (\@$) {
         #$output .= "<td class='top' bgcolor='$color' >$b</td>";
     #}
    
-    my $output = "<table border=1 cellpadding=5 cellspacing=5 class=Cc0c0c0 bordercolor='#c0c0c0'>";
+    my $output = "<table border=1 cellpadding=2 cellspacing=2 class=Cc0c0c0 bordercolor='#c0c0c0'>";
     $output .= "\n<tr>";
 
     foreach $b (@$body) {
@@ -87,14 +99,14 @@ sub charTable {
    
     my $output = <<END;
 
-<table border=0 cellpadding=5>
+<table border=0 cellpadding=2>
     <tr>
         <td valign=top align=center bgcolor='#fffff'><font size=2 color='#000000'>t</font>
         </td>
     </tr>
     <tr>
         <td valign=top>
-            <table width='100%' border=0 cellspacing=5 cellpadding=5>
+            <table width='100%' border=0 cellspacing=2 cellpadding=2>
                 <tr>
                     <td  align=left ><a href='?s=Test&#032;&12' title='Match against Any Single Character'><font color='#00000c'>c</font></a>
                     </td>
@@ -118,188 +130,61 @@ sub main {
 
     print "<html><head>";
 
-    print <<END;
-
-    <style type="text/css">
-                
-                .top {
-                    vertical-align: top;
-                }
-       
-
-    </style>
-
-END
-
-    print "</head><body>";
-
-    print <<END;
-
-</head><body>
-
-    
-<table border=0 cellpadding=5 cellspacing=5>
-    <tr>
-        <td align=top> 
-            <table border=1 cellpadding=5 cellspacing=5 class=Cc0c0c0 bordercolor='#c0c0c0'>
-                <tr>
-                    <td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>
-                        TEST
-                    </td>
-                </tr>
-            </table>
-        </td>
-        
-        <td align=top> 
-            <table border=1 cellpadding=5 cellspacing=5 class=Cc0c0c0 bordercolor='#c0c0c0'>
-                <tr>
-                    <td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>
-                        TEST
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
-END
-
-
-print <<END;
-
-<table border=0 cellpadding=5 cellspacing=5>
-    <tr>
-        <td valign=top>
-            <table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c0c0c0'>
-                <tr>
-                    <td valign=top bgcolor='#c0c0c0' class=Cc4986f>
-                        Test
-                    </td>
-                </tr>
-            </table>
-        </td>
-        
-        <td valign=top>
-            <table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c0c0c0'>
-                <tr>
-                    <td valign=top bgcolor='#c0c0c0' class=Cc4986f>
-                        Test
-                    </td>
-                </tr>
-            </table>
-        </td>
-
-    </tr>
-    
-    <tr>
-        <td valign=top colspan=4>
-            <table width='100%' border=0 cellspacing=5 cellpadding=5>
-                <tr>
-                    <td  align=left ><a href='?s=Test&#032;&2' title='Match against Variable Name'><font color='#00000c' >var</font></a>
-                    </td>
-                    <td align=right valign=bottom><a href='?s=Test&#032;&-2' title='Match against Test'><font color='#0000cc' size=2>Test</font></a>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
-
-END
-
-
-    #@charTables = ( charTable ("T", "c"), 
-                    #charTable ("e", "c"),
-                    #charTable ("s", "c"), 
-                    #charTable ("t", "c") );
-    #@varTable = ( headerTable (innerTable (@charTables, "blue"), "var", "T") );
-    #@wordTable = ( headerTable (innerTable (@varTable, ""), "word", "T") );
-
-    #@charTable2 = ( charTable ("_", "c") );
-    #@varTable2 = ( headerTable (innerTable (@charTable2, ""), "w", "_") );
-    
-    #@tables = (@wordTable, @varTable2);
-
-    #print headerTable (innerTable (@tables, ""), "", "");
-
-    # WORD SECTION
-    @charTables = ( charTable ("T", "c"), 
-                    charTable ("e", "c"),
-                    charTable ("s", "c"), 
-                    charTable ("t", "c") );
-
-    @charTables1 = ( headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T") );
-    @charTables2 = ( headerTable ($charTable [1], "", "") );
-    @charTables3 = ( headerTable ($charTable [2], "", "") );
-    @charTables4 = ( headerTable ($charTable [3], "", "") );
-
-    @empty = ( "", "" );
-
     @wTables = (
             headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"),
-            headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"),
-        #headerTable(innerTable ( @charTables1, ""), "w", "T"), 
-            #headerTable(innerTable ( @charTables2, ""), "w", "T"),
-            #headerTable(innerTable ( @charTables3, ""), "w", "T"),
-            #headerTable(innerTable ( @charTables4, ""), "w", "T")
+            headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
+            headerTable (innerTable1 (charTable ("s", "c"), ""), "w", "s"),
+            headerTable (innerTable1 (charTable ("t", "c"), ""), "w", "t"),
+
         );
-    #@wTables = ( 
-        #headerTable(innerTable (@empty, ""), "w", "T"),
-        #headerTable(innerTable (@empty, ""), "w", "T"),
-        #headerTable(innerTable (@empty, ""), "w", "T"),
-        #headerTable(innerTable (@empty, ""), "w", "T") );
-
-
-
-    @varTable = ( headerTable(innerTable (@wTables, "blue"), "var", "Test") );
-
-    @inners = ( 
-                innerTable1 (headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"), "blue"),
-                innerTable1 (headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"), "blue"),
+    @varTableCells = ( 
+                innerTable1 (fillerTable ($wTables [0]), "blue"),
+                innerTable1 (fillerTable ($wTables [1]), "blue"),
+                innerTable1 (fillerTable ($wTables [2]), "blue"),
+                innerTable1 (fillerTable ($wTables [3]), "blue"),
             );
+    $var = headerTable1(@varTableCells, "var", "Test");
+    $wordTable = headerTable(innerTable1 ($var, "yellow"), "word", "Test");
 
-    print "<!-- EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE -->";
-    print headerTable1(@inners, "var", "Test");
+    #
+    # NOW BUILD THE TABLE WITH THE SPACE
+    #
+    $spaceTable = headerTable (innerTable1 (fillerTable (fillerTable (fillerTable (charTable ("_", "c"))), ""), ""), "w", "_");
+
+    #
+    # NOW BUILD THE ONE TABLE
+    #
+    @wTables2 = (
+            headerTable (innerTable1 (charTable ("O", "c"), ""), "w", "o"),
+            headerTable (innerTable1 (charTable ("n", "c"), ""), "w", "n"),
+            headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
+
+        );
+
+    @stateCells = (
+        innerTable1 ($wTables [1], "blue"),
+        innerTable1 ($wTables [2], "blue"),
+    );
+
+    $state = headerTable1(@stateCells, "usstate", "ne");
+
+    @varTableCells = (
+        innerTable1 (fillerTable ($wTables [0]), "blue"),
+        innerTable1 ($state, "blue"),
+    );
+
+    $var2 = headerTable1(@varTableCells, "var", "one");
+    $wordTable2 = headerTable(innerTable1 ($var2, "yellow"), "word", "one");
+
+
+    @allTables = ( 
+        innerTable1 ($wordTable, "blue"),
+        innerTable1 ($spaceTable, "blue"), 
+        innerTable1 ($wordTable2, "blue") );
+
+    $outsideTable = headerTable1 (@allTables, "", "");
+
+
+    print headerTable (innerTable1 ($outsideTable, "blue"), "", "");
     return;
-    @wordTable = ( headerTable(innerTable (@varTable, "yellow"), "word", "Test") );
-    #@outsideWordTable = ( headerTable(innerTable (@wordTable, "purple"), "", "" ) );
-    $outsideTable = headerTable (innerTable (@wordTable, "green"), "", "");
-
-    #print $outsideTable;
-
-    ## SPACE SECTION
-    #@charTables2 = (
-                #headerTable (innerTable1 (
-                #headerTable (innerTable1 (
-                #headerTable (innerTable1 (charTable ("_", "c"), ""), "", ""),
-                        #""), "", ""), ""), "", "")
-            #);
-    #@wsTable = ( headerTable(innerTable (@charTables2, "pink"), "ws", "_") );
-    #@outsideWsTable = ( headerTable(innerTable (@wsTable, "gray"), "", "") );
-    
-    #@allTables = ( @outsideWordTable2, @outsideWsTable );
-    #$outsideTable = headerTable (innerTable (@allTables, "green"), "", "");
-
-    #print $outsideTable;
-
-    print "<table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cc0c0c0 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cc0c0c0><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cc4986f><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5
-    cellspacing=5 class=Cc16117 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cc16117><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cc4986f bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cc4986f><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cea1d13 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cea1d13><table
-    border=0 cellpadding=5><tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>T</font></td></tr><tr><td valign=top><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&9' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Test&#032;&-9' title='Match against T'><font color='#0000cc'
-    size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&4' title='Match against Any Single Word Character (Not Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-4' title='Match against T'><font color='#0000cc'
-    size=2>T</font></a></td></tr></table></td></tr></table></td></tr></table></td><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cd1bc5d bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cd1bc5d><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cf74125 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cf74125><table border=0 cellpadding=5><tr><td valign=top align=center
-    bgcolor='#ffffff'><font size=2 color='#000000'>e</font></td></tr><tr><td valign=top><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&10' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Test&#032;&-10' title='Match against e'><font color='#0000cc' size=2>e</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top
-    colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&5' title='Match against Any Single Word Character (Not Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-5' title='Match against e'><font color='#0000cc' size=2>e</font></a></td></tr></table></td></tr></table></td></tr></table></td><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cdee04b
-    bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cdee04b><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cfa6537 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cfa6537><table border=0 cellpadding=5><tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>s</font></td></tr><tr><td valign=top><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a
-    href='?s=Test&#032;&11' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Test&#032;&-11' title='Match against s'><font color='#0000cc' size=2>s</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&6' title='Match against Any Single Word Character (Not
-    Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-6' title='Match against s'><font color='#0000cc' size=2>s</font></a></td></tr></table></td></tr></table></td></tr></table></td><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cebfa39 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Cebfa39><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5
-    class=Ced8949 bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=Ced8949><table border=0 cellpadding=5><tr><td valign=top align=center bgcolor='#ffffff'><font size=2 color='#000000'>t</font></td></tr><tr><td valign=top><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&12' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Test&#032;&-12'
-    title='Match against t'><font color='#0000cc' size=2>t</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&7' title='Match against Any Single Word Character (Not Whitespace)'><font color='#00000c' >w</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-7' title='Match against t'><font color='#0000cc'
-    size=2>t</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=4><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&2' title='Match against Variable Name'><font color='#00000c' >var</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-2' title='Match against Test'><font color='#0000cc' size=2>Test</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td
-    valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&1' title='Match against Word'><font color='#00000c' >word</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-1' title='Match against Test'><font color='#0000cc' size=2>Test</font></a></td></tr></table></td></tr></table></td></tr></table></td><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=Cd1bc5d bordercolor='#c0c0c0'><tr><td valign=top
-    bgcolor='#c0c0c0' class=Cd1bc5d><table border=0 cellpadding=5 cellspacing=5><tr><td valign=top><table border=1 cellpadding=5 cellspacing=5 class=C9e840c bordercolor='#c0c0c0'><tr><td valign=top bgcolor='#c0c0c0' class=C9e840c><table border=1 cellpadding=5 cellspacing=5 class=C9e840c bordercolor='#c0c0c0'><tr><td valign=top class=C9e840c><table border=1 cellpadding=5 cellspacing=5 class=C9e840c bordercolor='#c0c0c0'><tr><td valign=top class=C9e840c><table border=0 cellpadding=5><tr><td
-    valign=top align=center bgcolor='#c0c0c0'><font size=2 color='#000000'>_</font></td></tr><tr><td valign=top><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&8' title='Match against Any Single Character'><font color='#00000c'>c</font></a></td><td>&nbsp</td><td align=right valign=bottom><a href='?s=Test&#032;&-8' title='Match against _'><font color='#0000cc'
-    size=2>_</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&3' title='Match against White Space'><font color='#00000c' >ws</font></a></td><td align=right valign=bottom><a href='?s=Test&#032;&-3' title='Match against _'><font color='#0000cc'
-    size=2>_</font></a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=2><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ></td><td align=right valign=bottom></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td valign=top colspan=1><table width='100%' border=0 cellspacing=5 cellpadding=5><tr><td  align=left ><a href='?s=Test&#032;&-9999' title='Match against '><font color='#00000c' ></font></a></td><td
-    align=right valign=bottom><a href='?s=Test&#032;&9999' title='Match against '><font color='#0000cc' size=2></font></a></td></tr></table></td></tr></table>";
-
-    print "</body></head>";
 }
