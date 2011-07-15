@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
 use Match;
+use Location;
+
+use Tree::Nary;
 
 
 main ();
@@ -44,33 +47,10 @@ sub fillerTable {
 sub innerTable1 ($$) {
     my ($body, $color) = @_;
 
-    my $output = "<table border=1 cellpadding=2 cellspacing=2 class=Cc0c0c0 bordercolor='#c0c0c0'>";
+    my $output = "<table border=1 cellpadding=2 cellspacing=2 bordercolor='#c0c0c0'>";
     $output .= "<tr>";
-    $output .= "<td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>$body</td>";
+    $output .= "<td valign=top bgcolor='#c0c0c0'>$body</td>";
     $output .= "</tr></table>";
-
-    return $output;
-}
-
-sub innerTable (\@$) {
-    my ($body, $color) = @_;
-
-    #my $output = "<table border=0 bordercolor='$color' cellpadding=1 cellspacing=1> 
-        #<tr>";
-
-    #foreach $b (@$body) {
-        #$output .= "<td class='top' bgcolor='$color' >$b</td>";
-    #}
-   
-    my $output = "<table border=1 cellpadding=2 cellspacing=2 class=Cc0c0c0 bordercolor='#c0c0c0'>";
-    $output .= "\n<tr>";
-
-    foreach $b (@$body) {
-        $output .= "<td valign=top bgcolor='#c0c0c0' class=Cc0c0c0>\n\n\nTEST\n</td>\n\n\n";
-    }
-    
-    $output .= "</tr></table>";
-
 
     return $output;
 }
@@ -78,49 +58,143 @@ sub innerTable (\@$) {
 sub charTable {
     my ($char, $type) = @_;
 
-    #my $output = "<table border=0 >
-                #<tr>
-                    #<td class='top' align=center bgcolor='#ffffff'><font size=2 color='#000000'>$char</font>
-                    #</td>
-                #</tr>
-                #<tr>
-                    #<td class='top'>
-                        #<table width='100%' border=0>
-                            #<tr>
-                                #<td align=left >$type </td>
-                                #<td>&nbsp </td>
-                                #<td align=right valign=bottom>$char</td>
-                            #</tr>
-                        #</table>
-                    #</td>
-                #</tr>
-            #</table>
-    #";
-   
-    my $output = <<END;
-
-<table border=0 cellpadding=2>
-    <tr>
-        <td valign=top align=center bgcolor='#fffff'><font size=2 color='#000000'>t</font>
+    my $output = <<END; 
+    
+    <table border=0 cellpadding=2> <tr>
+        <td valign=top align=center bgcolor='#fffff'><font size=2 color='#000000'>$char</font>
         </td>
     </tr>
     <tr>
         <td valign=top>
             <table width='100%' border=0 cellspacing=2 cellpadding=2>
                 <tr>
-                    <td  align=left ><a href='?s=Test&#032;&12' title='Match against Any Single Character'><font color='#00000c'>c</font></a>
+                    <td  align=left ><a href='?s=Test&#032;&12' title='Match against Any Single Character'><font color='#00000c'>$type</font></a>
                     </td>
                     <td>&nbsp
                     </td>
-                    <td align=right valign=bottom><a href='?s=Test&#032;&-12' title='Match against t'><font color='#0000cc' size=2>t</font></a>
+                    <td align=right valign=bottom><a href='?s=Test&#032;&-12' title='Match against t'><font color='#0000cc' size=2>$char</font></a>
                     </td>
                 </tr>
             </table>
         </td>
     </tr>
-</table>
+    </table>
 END
 
+    return $output;
+}
+
+sub buildTestTree1 {
+    my $baseTree = new Tree::Nary;
+
+    # Top level nodes
+    my $wordNode = Tree::Nary->new (Location->new ("word", "X", "Test"));
+
+    my $varNode = Tree::Nary->new (Location->new ("ws", "X", "T"));
+    my $varNode2 = Tree::Nary->new (Location->new ("ws", "X", "e"));
+    my $c1 = Tree::Nary->new (Location->new ("c", "X", "T"));
+    my $c2 = Tree::Nary->new (Location->new ("c", "X", "e"));
+
+    $c1->append ($varNode, $c1);
+    $c2->append ($varNode2, $c2);
+
+    $varNode->append ($wordNode, $varNode);
+    $varNode2->append ($wordNode, $varNode2);
+    $wordNode->append ($baseTree, $wordNode);
+
+    return $baseTree;
+}
+
+sub buildTestTree {
+    my $baseTree = new Tree::Nary;
+
+    # Top level nodes
+    my $wordNode = Tree::Nary->new (Location->new ("word", "X", "Test"));
+    my $spaceNode = Tree::Nary->new (Location->new ("ws", "X", "_"));
+    my $wordNode2 = Tree::Nary->new (Location->new ("word", "X", "one"));
+
+    # Build word level nodes
+    my $varNode = Tree::Nary->new (Location->new ("var", "X", "Test"));
+    my $wsNode1 = Tree::Nary->new (Location->new ("ws", "X", "T"));
+    my $wsNode2 = Tree::Nary->new (Location->new ("ws", "X", "e"));
+    my $wsNode3 = Tree::Nary->new (Location->new ("ws", "X", "s"));
+    my $wsNode4 = Tree::Nary->new (Location->new ("ws", "X", "t"));
+    my $cNode1 = Tree::Nary->new (Location->new ("c", "X", "T"));
+    my $cNode2 = Tree::Nary->new (Location->new ("c", "X", "e"));
+    my $cNode3 = Tree::Nary->new (Location->new ("c", "X", "s"));
+    my $cNode4 = Tree::Nary->new (Location->new ("c", "X", "t"));
+
+    $varNode->append ($wordNode, $varNode);
+    $wsNode1->append ($varNode, $wsNode1);
+    $wsNode2->append ($varNode, $wsNode2);
+    $wsNode3->append ($varNode, $wsNode3);
+    $wsNode4->append ($varNode, $wsNode4);
+    $cNode1->append ($wsNode1, $cNode1);
+    $cNode2->append ($wsNode2, $cNode2);
+    $cNode3->append ($wsNode3, $cNode3);
+    $cNode4->append ($wsNode4, $cNode4);
+
+
+    # Build space word
+    my $spaceChar = Tree::Nary->new (Location->new ("c", "X", "_"));
+    $spaceChar->append ($spaceNode, $spaceChar);
+
+    # Build last word
+    my $varNode2 = Tree::Nary->new (Location->new ("var", "X", "one"));
+    my $wsNode2_1 = Tree::Nary->new (Location->new ("ws", "X", "o"));
+    my $wsNode2_2 = Tree::Nary->new (Location->new ("ws", "X", "n"));
+    my $wsNode2_3 = Tree::Nary->new (Location->new ("ws", "X", "e"));
+    my $cNode2_1 = Tree::Nary->new (Location->new ("c", "X", "o"));
+    my $cNode2_2 = Tree::Nary->new (Location->new ("c", "X", "n"));
+    my $cNode2_3 = Tree::Nary->new (Location->new ("c", "X", "e"));
+    my $stateNode = Tree::Nary->new (Location->new ("state", "X", "ne"));
+
+    $cNode2_1->append ($wsNode2_1, $cNode2_1);
+    $cNode2_2->append ($wsNode2_2, $cNode2_2);
+    $cNode2_3->append ($wsNode2_3, $cNode2_3);
+    $wsNode2_1->append ($varNode2, $wsNode2_1);
+    $wsNode2_2->append ($stateNode, $wsNode2_3);
+    $wsNode2_3->append ($stateNode, $wsNode2_2);
+    $stateNode->append ($varNode2, $stateNode);
+    $varNode2->append ($wordNode2, $varNode2);
+
+    $wordNode->append ($baseTree, $wordNode);
+    $spaceNode->append ($baseTree, $spaceNode);
+    $wordNode2->append ($baseTree, $wordNode2);
+
+    return $baseTree;
+}
+
+sub traverseTree {
+    my ($tree) = shift;
+   
+    my @subLevels = ();
+
+    # Traverse all the sub children
+    $node = $tree->{children};
+    while (defined ($node)) {
+        my $next = Tree::Nary->new ();
+        $next = $node->{next};
+
+        my $data = $node->{data};
+
+        if (Tree::Nary->is_leaf ($node)) {
+            # Character table
+            my $charTable = innerTable1 (charTable ($data->getMatch (), $data->getName ()), "");
+            push (@subLevels, $charTable);
+        } else {
+            # Recursive call needed
+            push (@subLevels, innerTable1 (traverseTree ($node), ""));
+        }
+        
+        $node = $next;
+    }
+                                                                                   
+    if (defined ($tree->{data})) {
+        $output = headerTable1 (@subLevels, $tree->{data}->getName (), $tree->{data}->getMatch ());
+    } else {
+        $output = headerTable (innerTable1 (headerTable1 (@subLevels, "", ""), ""), "", "");
+    }
 
     return $output;
 }
@@ -129,62 +203,82 @@ sub main {
     print "Content-type: text/html\n\n";
 
     print "<html><head>";
+    
+    my $testCase = "Test one";
+    my @mappingsList = Match::getGeneralMappings();
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+    
+    my %hashedLocations = Match::locationsToHash (@matchedLocations);
 
-    @wTables = (
-            headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"),
-            headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
-            headerTable (innerTable1 (charTable ("s", "c"), ""), "w", "s"),
-            headerTable (innerTable1 (charTable ("t", "c"), ""), "w", "t"),
+    print "<pre>";
+    Match::printHashedLocations(%hashedLocations);
+    #$testTree = Match::locationsToTree (%hashedLocations);
+    $testTree = Match::locationsToTree (@matchedLocations);
+    my $tableBody = traverseTree ($testTree);
+    print "</pre>";
+   
+    print $tableBody;
 
-        );
-    @varTableCells = ( 
-                innerTable1 (fillerTable ($wTables [0]), "blue"),
-                innerTable1 (fillerTable ($wTables [1]), "blue"),
-                innerTable1 (fillerTable ($wTables [2]), "blue"),
-                innerTable1 (fillerTable ($wTables [3]), "blue"),
-            );
-    $var = headerTable1(@varTableCells, "var", "Test");
-    $wordTable = headerTable(innerTable1 ($var, "yellow"), "word", "Test");
+    print "<br/><br/><br/>";
 
-    #
-    # NOW BUILD THE TABLE WITH THE SPACE
-    #
-    $spaceTable = headerTable (innerTable1 (fillerTable (fillerTable (fillerTable (charTable ("_", "c"))), ""), ""), "w", "_");
+    print "</body></html>";
+#    return;
 
-    #
-    # NOW BUILD THE ONE TABLE
-    #
-    @wTables2 = (
-            headerTable (innerTable1 (charTable ("O", "c"), ""), "w", "o"),
-            headerTable (innerTable1 (charTable ("n", "c"), ""), "w", "n"),
-            headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
+    #@wTables = (
+            #headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"),
+            #headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
+            #headerTable (innerTable1 (charTable ("s", "c"), ""), "w", "s"),
+            #headerTable (innerTable1 (charTable ("t", "c"), ""), "w", "t"),
 
-        );
+        #);
+    #@varTableCells = ( 
+                #innerTable1 (fillerTable ($wTables [0]), "blue"),
+                #innerTable1 (fillerTable ($wTables [1]), "blue"),
+                #innerTable1 (fillerTable ($wTables [2]), "blue"),
+                #innerTable1 (fillerTable ($wTables [3]), "blue"),
+            #);
+    #$var = headerTable1(@varTableCells, "var", "Test");
+    #$wordTable = headerTable(innerTable1 ($var, "yellow"), "word", "Test");
 
-    @stateCells = (
-        innerTable1 ($wTables [1], "blue"),
-        innerTable1 ($wTables [2], "blue"),
-    );
+    ##
+    ## NOW BUILD THE TABLE WITH THE SPACE
+    ##
+    #$spaceTable = headerTable (innerTable1 (fillerTable (fillerTable (fillerTable (charTable ("_", "c"))), ""), ""), "w", "_");
 
-    $state = headerTable1(@stateCells, "usstate", "ne");
+    ##
+    ## NOW BUILD THE ONE TABLE
+    ##
+    #@wTables2 = (
+            #headerTable (innerTable1 (charTable ("O", "c"), ""), "w", "o"),
+            #headerTable (innerTable1 (charTable ("n", "c"), ""), "w", "n"),
+            #headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
 
-    @varTableCells = (
-        innerTable1 (fillerTable ($wTables [0]), "blue"),
-        innerTable1 ($state, "blue"),
-    );
+        #);
 
-    $var2 = headerTable1(@varTableCells, "var", "one");
-    $wordTable2 = headerTable(innerTable1 ($var2, "yellow"), "word", "one");
+    #@stateCells = (
+        #innerTable1 ($wTables [1], "blue"),
+        #innerTable1 ($wTables [2], "blue"),
+    #);
+
+    #$state = headerTable1(@stateCells, "usstate", "ne");
+
+    #@varTableCells = (
+        #innerTable1 (fillerTable ($wTables [0]), "blue"),
+        #innerTable1 ($state, "blue"),
+    #);
+
+    #$var2 = headerTable1(@varTableCells, "var", "one");
+    #$wordTable2 = headerTable(innerTable1 ($var2, "yellow"), "word", "one");
 
 
-    @allTables = ( 
-        innerTable1 ($wordTable, "blue"),
-        innerTable1 ($spaceTable, "blue"), 
-        innerTable1 ($wordTable2, "blue") );
+    #@allTables = ( 
+        #innerTable1 ($wordTable, "blue"),
+        #innerTable1 ($spaceTable, "blue"), 
+        #innerTable1 ($wordTable2, "blue") );
 
-    $outsideTable = headerTable1 (@allTables, "", "");
+    #$outsideTable = headerTable1 (@allTables, "", "");
 
 
-    print headerTable (innerTable1 ($outsideTable, "blue"), "", "");
-    return;
+    #print headerTable (innerTable1 ($outsideTable, "blue"), "", "");
+    #return;
 }

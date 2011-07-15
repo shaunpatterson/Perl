@@ -30,6 +30,7 @@ sub getGeneralMappings {
                             { "char" => [ "."  ] },
                             { "w"   => [ "[a-z]" ] },
                             { "ws"   => [ "\\s+" ] },
+                            { "state"  => [ "ne" ] },
                             { "var"  => [ "[a-z][a-z0-9_]*" ] },
                             { "word" => [ "[a-z]+" ] },
                             { "day"  => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d]" ] },
@@ -245,13 +246,34 @@ sub locationSortComparator ($$) {
         return $positionComparison;
     }
     
-    #return $positionComparison;
-    
     # And by the size of the match
     my $sizeComparison = length($a->getMatch()) - length($b->getMatch());
     if ($sizeComparison != 0) {
         return $sizeComparison;
     }
+
+    return $sizeComparison;
+
+}
+
+sub locationSortComparatorReversed ($$) {
+    my ($a, $b) = @_;
+    
+
+    # Sort by position next
+    my $positionComparison = $a->getStart() - $b->getStart();
+    if ($positionComparison != 0) {
+        return $positionComparison;
+    }
+    
+    # And by the size of the match
+    my $sizeComparison = length($b->getMatch()) - length($a->getMatch());
+    if ($sizeComparison != 0) {
+        return $sizeComparison;
+    } else {
+        return 1;   # Keep order
+    }
+
 
     return $sizeComparison;
 
@@ -305,6 +327,100 @@ sub locationsToHash (\@) {
 
     return %hashedLocations;
 }
+
+sub max {
+    my ($a, $b) = @_;
+
+    if ($a >= $b) {
+        return $a;
+    } else {
+        return $b;
+    }
+}
+
+# Convert hashed locations to an Nary tree
+sub locationsToTree (\@) {
+    my ($matchedLocations) = @_;
+
+    my $tree = Tree::Nary->new ();
+
+    my $parent = $tree;
+
+    @$matchedLocations = sort locationSortComparatorReversed @$matchedLocations;
+    printLocations ($matchedLocations);
+
+    foreach my $location (@$matchedLocations) {
+        # Create a new node for the item
+        my $node = Tree::Nary->new ($location);
+
+
+        if (defined ($parent->{data}) and
+            defined ($parent->{data}->getStart())) {
+
+            if ($parent->{data}->getStart () < $location->getStart () and 
+                $parent->{data}->getEnd () < $location->getEnd ()) {
+                # Traverse back to the last parent (??)
+
+                #while ($parent->{data}->getStart () != $location->getStart ()) {
+                #}
+
+                print "Reversing...: Parent: " . $parent->{data}->toString () . "\n";
+                print "Reversing...: Location: " . $location->toString () . "\n";
+
+                while (defined ($parent->{data}) and
+                       $parent->{data}->getStart () < $location->getStart () and 
+                       $parent->{data}->getEnd () < $location->getEnd () and
+                       $parent->{parent} != $parent) 
+                {
+                    $parent = $parent->{parent};
+                }
+                #print "New parent found: " . $parent->{data}->toString () . "\n";
+                $node->append ($parent, $node);
+
+                $parent = $node;
+            } else {
+                $node->append ($parent, $node);
+                $parent = $node;
+            }
+        
+
+        } else {
+            $node->append ($parent, $node);
+            $parent = $node;
+        }
+            
+    }
+
+
+    #foreach my $start (sort { $a <=> $b } keys %$hashedLocations) {
+        #print "$start\n";
+
+        #my $maxLength = -1;
+        #foreach my $location (reverse @{$hashedLocations->{$start}}) {
+
+            ## Create a new node for this item
+            #my $node = Tree::Nary->new ($location);
+
+            #$maxLength = max ($maxLength, length ($location->getMatch()));
+
+            ## Add the node to the parent node
+            #$node->append ($parent, $node);
+
+            #$parent = $node;
+        #}
+        
+        #print "max length: $maxLength\n";
+        #if ($maxLength > $parentLength) {
+            #$parent = $tree;
+        #}
+    #}
+
+
+
+    return $tree;
+}
+
+
 
 # Determine the max "depth" of a search.  That is, 
 #  what is the maximum number of regex options for each 
