@@ -10,6 +10,9 @@ sub new {
     $self->{start} = shift;
     $self->{end} = shift;
 
+    # Index in a match array, used by the view to easily pick out user selections
+    $self->{index} = -1;
+
     bless ($self, $class);
     return $self;
 }
@@ -39,9 +42,21 @@ sub getEnd {
     return $self->{end};
 }
 
+sub setIndex () {
+    my ($self, $newIndex) = @_;
+    $self->{index} = $newIndex;
+}
+
+sub getIndex () {
+    my $self = shift;
+    return $self->{index};
+}
+
 sub toString () {
     my $self = shift;
-    return "$self->{name}:$self->{regex}:$self->{match}:$self->{start}:$self->{end}";
+    return "$self->{name}:$self->{regex}:$self->{match}:$self->{start}:$self->{end}:$self->{index}";
 }
+
+
 
 1;

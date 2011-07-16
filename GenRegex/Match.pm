@@ -27,25 +27,45 @@ use warnings;
 sub getGeneralMappings {
     # Encode the mapping precedence by offset within a matching array
     my @mappingsList = (
-                            { "char" => [ "."  ] },
-                            { "w"   => [ "[a-z]" ] },
-                            { "ws"   => [ "\\s+" ] },
-                            { "state"  => [ "ne" ] },
-                            { "var"  => [ "[a-z][a-z0-9_]*" ] },
-                            { "word" => [ "[a-z]+" ] },
-                            { "day"  => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d]" ] },
-                            { "int"  => [ "[0-9]+" ] },
-                            { "month" => [ "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)" ] },
-                            { "year"  => [ "(?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] }, 
-                            { "string" => [ '".*?"' , '\\\'.*?\\\'' ] },
-                            { "username" => [ '[a-z][a-z0-9_-]{2,15}' ] },
-                            { "ddmmmyyy" => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1}))[-:\\/.](?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[-:\\/.](?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] },
-                            { "unixpath" => [ "(?:\\/[\\w\\.\\-]+)+" ] },
-                            { "ipaddress" => [ "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?![\\d]" ] },
-                       );
+            { "c" => [ "."  ] },
+            { "w"   => [ "[a-z]" ] },
+            { "ws"   => [ "\\s+" ] },
+            { "state"  => [ "ne" ] },
+            { "var"  => [ "[a-z][a-z0-9_]*" ] },
+            { "word" => [ "[a-z]+" ] },
+            { "day"  => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d]" ] },
+            { "int"  => [ "[0-9]+" ] },
+            { "month" => [ "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)" ] },
+            { "year"  => [ "(?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] }, 
+            { "string" => [ '".*?"' , '\\\'.*?\\\'' ] },
+            { "username" => [ '[a-z][a-z0-9_-]{2,15}' ] },
+            { "ddmmmyyy" => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1}))[-:\\/.](?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[-:\\/.](?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] },
+            { "unixpath" => [ "(?:\\/[\\w\\.\\-]+)+" ] },
+            { "ipaddress" => [ "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?![\\d]" ] },
+        );
 
     return @mappingsList;
 }
+
+# This is a total hack to reencode precedence...
+sub getMatchPrecedence {
+    my ($match) = shift;
+
+    my @precedenceMap = qw( c w ws state var word day int month year string username ddmmmyyy unixpath ipaddress );
+    
+    my $matchPrecedence = 0;
+    foreach my $matchTest (@precedenceMap) {
+        if ($match eq $matchTest) {
+            return $matchPrecedence;
+        }
+
+        $matchPrecedence++;
+    }
+
+    # Not found
+    return -1;
+}
+
 
 
 sub findPatternMatches {
@@ -270,13 +290,11 @@ sub locationSortComparatorReversed ($$) {
     my $sizeComparison = length($b->getMatch()) - length($a->getMatch());
     if ($sizeComparison != 0) {
         return $sizeComparison;
-    } else {
-        return 1;   # Keep order
     }
 
-
-    return $sizeComparison;
-
+    # And by precedence
+    my $precedenceComparison = getMatchPrecedence($b->getName ()) - getMatchPrecedence($a->getName());
+    return $precedenceComparison;
 }
 
 sub findMatches ($\@) {
@@ -308,7 +326,17 @@ sub findMatches ($\@) {
         @matchedLocations = (@matchedLocations, @nextMatchedLocations);
     }
 
-    return sort locationSortComparator (@matchedLocations);
+    @matchedLocations = sort locationSortComparator (@matchedLocations);
+
+    # Now update every element in the list with the list location.  This is
+    #  used by the view to easily indicate user selections
+    my $index = 0;
+    for my $location (@matchedLocations) {
+        $location->setIndex ($index);
+        $index++;
+    }
+
+    return @matchedLocations;
 }
 
 
@@ -338,87 +366,6 @@ sub max {
     }
 }
 
-# Convert hashed locations to an Nary tree
-sub locationsToTree (\@) {
-    my ($matchedLocations) = @_;
-
-    my $tree = Tree::Nary->new ();
-
-    my $parent = $tree;
-
-    @$matchedLocations = sort locationSortComparatorReversed @$matchedLocations;
-    printLocations ($matchedLocations);
-
-    foreach my $location (@$matchedLocations) {
-        # Create a new node for the item
-        my $node = Tree::Nary->new ($location);
-
-
-        if (defined ($parent->{data}) and
-            defined ($parent->{data}->getStart())) {
-
-            if ($parent->{data}->getStart () < $location->getStart () and 
-                $parent->{data}->getEnd () < $location->getEnd ()) {
-                # Traverse back to the last parent (??)
-
-                #while ($parent->{data}->getStart () != $location->getStart ()) {
-                #}
-
-                print "Reversing...: Parent: " . $parent->{data}->toString () . "\n";
-                print "Reversing...: Location: " . $location->toString () . "\n";
-
-                while (defined ($parent->{data}) and
-                       $parent->{data}->getStart () < $location->getStart () and 
-                       $parent->{data}->getEnd () < $location->getEnd () and
-                       $parent->{parent} != $parent) 
-                {
-                    $parent = $parent->{parent};
-                }
-                #print "New parent found: " . $parent->{data}->toString () . "\n";
-                $node->append ($parent, $node);
-
-                $parent = $node;
-            } else {
-                $node->append ($parent, $node);
-                $parent = $node;
-            }
-        
-
-        } else {
-            $node->append ($parent, $node);
-            $parent = $node;
-        }
-            
-    }
-
-
-    #foreach my $start (sort { $a <=> $b } keys %$hashedLocations) {
-        #print "$start\n";
-
-        #my $maxLength = -1;
-        #foreach my $location (reverse @{$hashedLocations->{$start}}) {
-
-            ## Create a new node for this item
-            #my $node = Tree::Nary->new ($location);
-
-            #$maxLength = max ($maxLength, length ($location->getMatch()));
-
-            ## Add the node to the parent node
-            #$node->append ($parent, $node);
-
-            #$parent = $node;
-        #}
-        
-        #print "max length: $maxLength\n";
-        #if ($maxLength > $parentLength) {
-            #$parent = $tree;
-        #}
-    #}
-
-
-
-    return $tree;
-}
 
 
 

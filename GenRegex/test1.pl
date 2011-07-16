@@ -90,6 +90,8 @@ sub test3 {
    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
 
    Match::printLocations(@matchedLocations);
+
+   return 1;
 }
 
 sub test4 {
@@ -101,14 +103,14 @@ sub test4 {
     my %hashedLocations = Match::locationsToHash (@matchedLocations);
 
     Match::printLocations(@matchedLocations);
-    Match::printHashedLocations(%hashedLocations);
+#    Match::printHashedLocations(%hashedLocations);
 
     my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
   
     # Select 22: var:(?:[a-z][a-z0-9_]*):two:9:11
     # This should come back with 2 'unintersting' matches
     #  of a word
-    my @userSelections = ( 18 );
+    my @userSelections = ( 27 );
     my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
 
     if ($regEx ne "(?:[a-z][a-z0-9_]*).*?(?:[a-z][a-z0-9_]*).*?([a-z][a-z0-9_]*)") {
@@ -159,7 +161,7 @@ sub test6 {
     Match::printLocations(@matchedLocations);
 
     # Match the second "This" completely
-    my @userSelections = ( -11 );
+    my @userSelections = ( -16 );
     my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
 
     print "$regEx\n";
@@ -186,7 +188,8 @@ sub test7 {
 
 sub main {
     
-    test7();
+#    test7();
+    test6();
 
     # All test cases should return non-zero if passed
     #test1() || print "Failed test1\n";

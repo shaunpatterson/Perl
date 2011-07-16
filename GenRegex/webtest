@@ -5,170 +5,275 @@ use Location;
 
 use Tree::Nary;
 
+use CGI;
+
+*UNSELECTED = \0;
+*SELECTED_NAME = \1;
+*SELECTED_MATCH = \2;
+*CASCADE_SELECTED = \4;
+*ANY_SELECTED = \7;
+*FILLER = \8;
+
+my @queryParameters = CGI::param();
+my $string = CGI::param ('s');
+my $selections = CGI::param ('sel');
+
+my @selections = split (',', $selections);
+
+if (not defined ($string)) {
+    $string = "Test one two three";
+}
+
 
 main ();
 
-sub headerTable {
-    my ($body, $left, $right) = @_;
+sub buildSelectionLink {
+    my ($selectionIndex) = shift;
+   
+    if (defined ($selections)) {
+        $link = "?s=$string&sel=$selections,$selectionIndex";
+    } else {
+        $link = "?s=$string&sel=$selectionIndex";
+    }
 
-    my $output = "<table border=0 cellpadding=2 cellspacing=2><tr><td valign=top>$body";
-    $output .= "</td></tr><tr><td valign=top colspan=1> <table width='100%' border=0 cellspacing=2 cellpadding=2>";
-    $output .= "<tr> <td align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c' >$left</font></a> </td> <td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2>$right</font></a> </td> </tr> </table> </td> </tr> </table>";
-
-    return $output;
+    return $link;
 }
 
-sub headerTable1 (\@$$) {
-    my ($body, $left, $right) = @_;
+sub headerTable {
+    my ($body, $location, $flags) = @_;
 
-    my $output = "<table border=0 cellpadding=2 cellspacing=2><tr>";
+    $borderSize = 0;
+    $bgColor = "#c0c0c0";
+    $cellPadding = 0;
+    $cellSpacing = 0;
+    
+    
+    if (not defined ($flags)) {
+        $flags = $UNSELECTED;
+    }
+
+    $leftFontColor = '#00000c';
+
+    if (defined ($flags) and
+       ($flags == $SELECTED_NAME or $flags == $SELECTED_MATCH or $flags == $CASCADE_SELECTED)) {
+
+        $bgColor = 'black';
+        $leftFontColor = 'white';
+        $rightFontColor = '#0000cc';
+    }
+
+
+    my $output = "<table style='header'><tr>";
     
     foreach my $b (@$body) {
         $output .= "<td valign=top>$b</td>";
     }
-    $output .= "</tr><tr><td valign=top colspan=" . scalar @$body . "> <table width='100%' border=0 cellspacing=2 cellpadding=2>";
-    $output .= "<tr> <td align=left ><a href='?s=T&-9999' title='Match against '><font color='#00000c' >$left</font></a> </td> <td align=right valign=bottom><a href='?s=T&9999' title='Match against '><font color='#0000cc' size=2>$right</font></a> </td> </tr> </table> </td> </tr> </table>";
+    $output .= "</tr><tr><td valign=top colspan=" . scalar @$body . "> <table width='100%' bordercolor='$bgColor' bgcolor='$bgColor' cellspacing=$cellSpacing cellpadding=$cellPadding>";
+
+
+    my $leftText, $rightText;
+    my $leftLink, $rightLink;
+
+    if (defined ($location)) {
+        $leftText = $location->getName();
+        $rightText = $location->getMatch();
+
+        if ($rightText eq " ") {
+            $rightText = "_";
+        }
+
+        $leftLink = buildSelectionLink ($location->getIndex ());
+        $rightLink = buildSelectionLink ("-" . $location->getIndex ());
+    } else {
+        $leftText = "";
+        $rightText = "";
+        $leftLink = "";
+        $rightLink = "";
+    }
+
+
+    
+
+    if ($flags == $UNSELECTED) {
+        $output .= "<tr> <td align=left ><a href='$leftLink' title='Match against '><font color='$leftFontColor' >$leftText</font></a> </td>";
+        $output .= "<td align=right valign=bottom><a href='$rightLink' title='Match against '><font color='$rightFontColor' size=2>$rightText</font></a> </td> </tr> </table> </td> </tr> </table>";
+    }
+    elsif ($flags == $SELECTED_NAME) {
+        $output .= "<tr> <td align=left>NAME</td>";
+        $output .= "<td align=right valign=bottom>&nbsp;</td> </tr> </table> </td> </tr> </table>";
+    } 
+    elsif ($flags == $SELECTED_MATCH) {
+        $output .= "<tr> <td align=left ></td>";
+        $output .= "<td align=right valign=bottom><font size=2>MATCH</font></td> </tr> </table> </td> </tr> </table>";
+    } 
+    elsif ($flags == $CASCADE_SELECTED) {
+        $output .= "<tr> <td align=left ></td>";
+        $output .= "<td align=right valign=bottom>&nbsp;<td> </tr> </table> </td> </tr> </table>";
+    }
 
     return $output;
 }
 
 sub fillerTable {
-    my ($body) = @_;
+    my ($body, $flags) = @_;
+
+    if (not defined ($flags)) {
+        $flags = $UNSELECTED;
+    }
+
+    $color = '#c0c0c0';
+    if ($flags & $ANY_SELECTED) {
+        $color = 'black';
+    }
 
     ## basically an inner table 
-    my $output = "<table border=1 cellpadding=2 cellspacing=2>";
+    my $output = "<table border=0 bgcolor='$color' cellpadding=0 cellspacing=0>";
     $output .= "<tr>";
     $output .= "<td valign=top>$body</td>";
     $output .= "</tr></table>";
 
-    return headerTable(innerTable1 ($body, ""), "", "");
+    my @innerTables = ( innerTable ($body, "", $FILLER | $flags) );
+
+    return headerTable (\@innerTables);
 }
 
-sub innerTable1 ($$) {
-    my ($body, $color) = @_;
+sub innerTable {
+    my ($body, $color, $flags) = @_;
 
-    my $output = "<table border=1 cellpadding=2 cellspacing=2 bordercolor='#c0c0c0'>";
+    if (not defined ($flags)) {
+        $flags = $UNSELECTED;
+    }
+
+    my $borderSize = 1;
+    my $color = "#c0c0c0";
+    my $borderColor = "#c0c0c0";
+
+    my $cellSpacing = 0;
+
+    if ($flags & $SELECTED_NAME or 
+        $flags & $SELECTED_MATCH or 
+        $flags & $CASCADE_SELECTED) 
+    {
+        $color = 'black';
+        $borderSize = 0;
+        $borderColor = 'black';
+        $cellSpacing = 1;
+    }
+
+    if ($flags & $FILLER) {
+        $borderSize = 0;
+        $cellSpacing = 1;
+    }
+    
+    my $output = "";
+    $output = "<table border=$borderSize cellpadding=$cellSpacing cellspacing=0>";
     $output .= "<tr>";
-    $output .= "<td valign=top bgcolor='#c0c0c0'>$body</td>";
+    $output .= "<td valign=top bgcolor='$color'>$body</td>";
     $output .= "</tr></table>";
 
     return $output;
 }
 
 sub charTable {
-    my ($char, $type) = @_;
-
-    my $output = <<END; 
+    my ($location, $flags) = @_;
     
-    <table border=0 cellpadding=2> <tr>
-        <td valign=top align=center bgcolor='#fffff'><font size=2 color='#000000'>$char</font>
-        </td>
-    </tr>
-    <tr>
-        <td valign=top>
-            <table width='100%' border=0 cellspacing=2 cellpadding=2>
-                <tr>
-                    <td  align=left ><a href='?s=Test&#032;&12' title='Match against Any Single Character'><font color='#00000c'>$type</font></a>
-                    </td>
-                    <td>&nbsp
-                    </td>
-                    <td align=right valign=bottom><a href='?s=Test&#032;&-12' title='Match against t'><font color='#0000cc' size=2>$char</font></a>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-    </table>
-END
+    if (not defined ($flags)) {
+        $flags = $UNSELECTED;
+    }
+
+    my $char = $location->getMatch();
+    my $type = $location->getName();
+
+    # Display spaces as underscores
+    if ($char eq " ") {
+        $char = "_";
+    }
+
+    my $output = "<table border=0> 
+                    <tr>
+                       <td valign=top align=center bgcolor='#fffff' cellpadding=2 cellspacing=2><font size=2 color='#000000'>$char</font></td>
+                    </tr>";
+
+    if ($flags & $SELECTED_MATCH or $flags & $SELECTED_NAME) {
+        $output .= "<tr>
+                        <td valign=top>
+                            <table width='100%' border=0 cellspacing=0 cellpadding=0 bgcolor='black'>
+                                <tr>
+                                    <td align=left>&nbsp; </td>
+                                    <td>&nbsp</td>
+                                    <td align=right>&nbsp</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>";
+
+    } 
+    elsif ($flags & $CASCADE_SELECTED) {
+        $output .= "<tr>
+                        <td valign=top>
+                            <table width='100%' border=0 cellspacing=0 cellpadding=0 bgcolor='black'>
+                                <tr>
+                                    <td align=left>&nbsp; </td>
+                                    <td>&nbsp</td>
+                                    <td align=right>&nbsp</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>";
+
+    } 
+    else {
+        $leftLink = buildSelectionLink ($location->getIndex ());
+        $rightLink = buildSelectionLink ("-" . $location->getIndex ());
+
+        $output .= "<tr>
+                        <td valign=top>
+                            <table width='100%' border=0 cellspacing=0 cellpadding=0>
+                                <tr>
+                                    <td align=left><a href='$leftLink' title='Match against Any Single Character'><font color='#00000c'>$type</font></a></td>
+                                    <td>&nbsp</td>
+                                    <td align=right valign=bottom><a href='$rightLink' title='Match against t'><font color='#0000cc' size=2>$char</font></a></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>";
+    }
+    
+    $output .= "</table>";
 
     return $output;
 }
 
-sub buildTestTree1 {
-    my $baseTree = new Tree::Nary;
+sub selectionFlags {
+    my ($node) = shift;
 
-    # Top level nodes
-    my $wordNode = Tree::Nary->new (Location->new ("word", "X", "Test"));
+    if (defined ($node->{data})) {
+        my $searchRegex = "^" . $node->{data}->getIndex() . "\$";
 
-    my $varNode = Tree::Nary->new (Location->new ("ws", "X", "T"));
-    my $varNode2 = Tree::Nary->new (Location->new ("ws", "X", "e"));
-    my $c1 = Tree::Nary->new (Location->new ("c", "X", "T"));
-    my $c2 = Tree::Nary->new (Location->new ("c", "X", "e"));
+        if (grep { /$searchRegex/ } @selections) {
+            return $SELECTED_NAME;
+        } else {
+            $searchRegex = "^-" . $node->{data}->getIndex() . "\$";
 
-    $c1->append ($varNode, $c1);
-    $c2->append ($varNode2, $c2);
+            if (grep { /$searchRegex/ } @selections) {
+                return $SELECTED_MATCH;
+            }
+        }
+    }
 
-    $varNode->append ($wordNode, $varNode);
-    $varNode2->append ($wordNode, $varNode2);
-    $wordNode->append ($baseTree, $wordNode);
-
-    return $baseTree;
-}
-
-sub buildTestTree {
-    my $baseTree = new Tree::Nary;
-
-    # Top level nodes
-    my $wordNode = Tree::Nary->new (Location->new ("word", "X", "Test"));
-    my $spaceNode = Tree::Nary->new (Location->new ("ws", "X", "_"));
-    my $wordNode2 = Tree::Nary->new (Location->new ("word", "X", "one"));
-
-    # Build word level nodes
-    my $varNode = Tree::Nary->new (Location->new ("var", "X", "Test"));
-    my $wsNode1 = Tree::Nary->new (Location->new ("ws", "X", "T"));
-    my $wsNode2 = Tree::Nary->new (Location->new ("ws", "X", "e"));
-    my $wsNode3 = Tree::Nary->new (Location->new ("ws", "X", "s"));
-    my $wsNode4 = Tree::Nary->new (Location->new ("ws", "X", "t"));
-    my $cNode1 = Tree::Nary->new (Location->new ("c", "X", "T"));
-    my $cNode2 = Tree::Nary->new (Location->new ("c", "X", "e"));
-    my $cNode3 = Tree::Nary->new (Location->new ("c", "X", "s"));
-    my $cNode4 = Tree::Nary->new (Location->new ("c", "X", "t"));
-
-    $varNode->append ($wordNode, $varNode);
-    $wsNode1->append ($varNode, $wsNode1);
-    $wsNode2->append ($varNode, $wsNode2);
-    $wsNode3->append ($varNode, $wsNode3);
-    $wsNode4->append ($varNode, $wsNode4);
-    $cNode1->append ($wsNode1, $cNode1);
-    $cNode2->append ($wsNode2, $cNode2);
-    $cNode3->append ($wsNode3, $cNode3);
-    $cNode4->append ($wsNode4, $cNode4);
-
-
-    # Build space word
-    my $spaceChar = Tree::Nary->new (Location->new ("c", "X", "_"));
-    $spaceChar->append ($spaceNode, $spaceChar);
-
-    # Build last word
-    my $varNode2 = Tree::Nary->new (Location->new ("var", "X", "one"));
-    my $wsNode2_1 = Tree::Nary->new (Location->new ("ws", "X", "o"));
-    my $wsNode2_2 = Tree::Nary->new (Location->new ("ws", "X", "n"));
-    my $wsNode2_3 = Tree::Nary->new (Location->new ("ws", "X", "e"));
-    my $cNode2_1 = Tree::Nary->new (Location->new ("c", "X", "o"));
-    my $cNode2_2 = Tree::Nary->new (Location->new ("c", "X", "n"));
-    my $cNode2_3 = Tree::Nary->new (Location->new ("c", "X", "e"));
-    my $stateNode = Tree::Nary->new (Location->new ("state", "X", "ne"));
-
-    $cNode2_1->append ($wsNode2_1, $cNode2_1);
-    $cNode2_2->append ($wsNode2_2, $cNode2_2);
-    $cNode2_3->append ($wsNode2_3, $cNode2_3);
-    $wsNode2_1->append ($varNode2, $wsNode2_1);
-    $wsNode2_2->append ($stateNode, $wsNode2_3);
-    $wsNode2_3->append ($stateNode, $wsNode2_2);
-    $stateNode->append ($varNode2, $stateNode);
-    $varNode2->append ($wordNode2, $varNode2);
-
-    $wordNode->append ($baseTree, $wordNode);
-    $spaceNode->append ($baseTree, $spaceNode);
-    $wordNode2->append ($baseTree, $wordNode2);
-
-    return $baseTree;
+    return $UNSELECTED;
 }
 
 sub traverseTree {
-    my ($tree) = shift;
+    my ($tree, $maxHeight, $currentHeight, $flags) = @_;
    
     my @subLevels = ();
+    
+   
+    # Determine if the cell is selected
+    if (not defined ($flags)) {
+        $flags = selectionFlags ($tree);
+    }
 
     # Traverse all the sub children
     $node = $tree->{children};
@@ -178,107 +283,159 @@ sub traverseTree {
 
         my $data = $node->{data};
 
+        my $childFlags = $flags;
+        if ($flags & $SELECTED_NAME or 
+            $flags & $SELECTED_MATCH) 
+        {
+            $childFlags = $CASCADE_SELECTED;
+        }
+
+        # Determine if the next cell is selected... what a pain in the ass
+        if ($childFlags != $CASCADE_SELECTED) {
+            $childFlags = selectionFlags ($node);
+        }
+
         if (Tree::Nary->is_leaf ($node)) {
             # Character table
-            my $charTable = innerTable1 (charTable ($data->getMatch (), $data->getName ()), "");
+            my $charTable = charTable ($data, $childFlags);
+            if ($currentHeight < $maxHeight) {
+
+                # Filler table needed to make the characters line up correctly
+                for (my $i = $currentHeight; $i < $maxHeight; $i++) {
+                    $charTable = fillerTable ($charTable, $childFlags); 
+                }
+            }
+
+            $charTable = innerTable ($charTable, "#c0c0c0", $childFlags);
+
             push (@subLevels, $charTable);
         } else {
             # Recursive call needed
-            push (@subLevels, innerTable1 (traverseTree ($node), ""));
+
+            # Determine if the next cell is selected... what a pain in the ass
+            if ($childFlags != $CASCADE_SELECTED) {
+                $childFlags = selectionFlags ($node);
+            }
+
+            push (@subLevels, innerTable (traverseTree ($node, $maxHeight, $currentHeight + 1, $childFlags), "#c0c0c0", $childFlags));
+
         }
         
         $node = $next;
     }
+    
                                                                                    
     if (defined ($tree->{data})) {
-        $output = headerTable1 (@subLevels, $tree->{data}->getName (), $tree->{data}->getMatch ());
+        $output = headerTable (\@subLevels, $tree->{data}, $flags);
     } else {
-        $output = headerTable (innerTable1 (headerTable1 (@subLevels, "", ""), ""), "", "");
+        my @innerTables = (innerTable (headerTable (\@subLevels), "#c0c0c0", $flags));
+        $output = headerTable (\@innerTables);
     }
 
     return $output;
+}
+
+
+# Convert hashed locations to an Nary tree
+sub locationsToTree (\@) {
+    my ($matchedLocations) = @_;
+
+    my $tree = Tree::Nary->new ();
+
+    my $parent = $tree;
+
+    @$matchedLocations = sort Match::locationSortComparatorReversed @$matchedLocations;
+
+    foreach my $location (@$matchedLocations) {
+        # Create a new node for the item
+        my $node = Tree::Nary->new ($location);
+
+
+        if (defined ($parent->{data}) and
+            defined ($parent->{data}->getStart())) {
+
+            if ($parent->{data}->getStart () < $location->getStart () and 
+                $parent->{data}->getEnd () < $location->getEnd ()) {
+
+                while (defined ($parent->{data}) and
+                       $parent->{data}->getStart () < $location->getStart () and 
+                       $parent->{data}->getEnd () < $location->getEnd () and
+                       $parent->{parent} != $parent) 
+                {
+                    $parent = $parent->{parent};
+                }
+                $node->append ($parent, $node);
+
+                $parent = $node;
+            } else {
+                $node->append ($parent, $node);
+                $parent = $node;
+            }
+        
+
+        } else {
+            $node->append ($parent, $node);
+            $parent = $node;
+        }
+            
+    }
+
+    return $tree;
 }
 
 sub main {
     print "Content-type: text/html\n\n";
 
     print "<html><head>";
+
+    print <<END;
+
+    <style type="text/css">
     
-    my $testCase = "Test one";
+        table.header {
+            border-width: 0px;
+            border-color: #FFFFFF;
+        }
+
+        td {
+            border-width: 0px;
+            border-style: solid;
+            border-color: #FFFFFF;
+        }
+
+    </style>
+
+
+END
+    
+    my $testCase = $string;
     my @mappingsList = Match::getGeneralMappings();
     my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
     
-    my %hashedLocations = Match::locationsToHash (@matchedLocations);
-
     print "<pre>";
-    Match::printHashedLocations(%hashedLocations);
-    #$testTree = Match::locationsToTree (%hashedLocations);
-    $testTree = Match::locationsToTree (@matchedLocations);
-    my $tableBody = traverseTree ($testTree);
+    
+    #Match::printLocations (@matchedLocations);
+
+    $testTree = locationsToTree (@matchedLocations);
+    my $treeHeight = $testTree->max_height ($testTree);
+    print "Tree height: $treeHeight\n";
+    my $tableBody = traverseTree ($testTree, $treeHeight, 1);
     print "</pre>";
    
     print $tableBody;
 
-    print "<br/><br/><br/>";
+    print "<br/>";
+    print "<br/>";
+    print "<br/>";
+
+
+    my @userSelections = split (',', $selections);
+    print "<pre>";
+    Match::printLocations (@matchedLocations);
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
+    print "Regex: $regEx\n";
+    print "</pre>";
 
     print "</body></html>";
-#    return;
-
-    #@wTables = (
-            #headerTable (innerTable1 (charTable ("T", "c"), ""), "w", "T"),
-            #headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
-            #headerTable (innerTable1 (charTable ("s", "c"), ""), "w", "s"),
-            #headerTable (innerTable1 (charTable ("t", "c"), ""), "w", "t"),
-
-        #);
-    #@varTableCells = ( 
-                #innerTable1 (fillerTable ($wTables [0]), "blue"),
-                #innerTable1 (fillerTable ($wTables [1]), "blue"),
-                #innerTable1 (fillerTable ($wTables [2]), "blue"),
-                #innerTable1 (fillerTable ($wTables [3]), "blue"),
-            #);
-    #$var = headerTable1(@varTableCells, "var", "Test");
-    #$wordTable = headerTable(innerTable1 ($var, "yellow"), "word", "Test");
-
-    ##
-    ## NOW BUILD THE TABLE WITH THE SPACE
-    ##
-    #$spaceTable = headerTable (innerTable1 (fillerTable (fillerTable (fillerTable (charTable ("_", "c"))), ""), ""), "w", "_");
-
-    ##
-    ## NOW BUILD THE ONE TABLE
-    ##
-    #@wTables2 = (
-            #headerTable (innerTable1 (charTable ("O", "c"), ""), "w", "o"),
-            #headerTable (innerTable1 (charTable ("n", "c"), ""), "w", "n"),
-            #headerTable (innerTable1 (charTable ("e", "c"), ""), "w", "e"),
-
-        #);
-
-    #@stateCells = (
-        #innerTable1 ($wTables [1], "blue"),
-        #innerTable1 ($wTables [2], "blue"),
-    #);
-
-    #$state = headerTable1(@stateCells, "usstate", "ne");
-
-    #@varTableCells = (
-        #innerTable1 (fillerTable ($wTables [0]), "blue"),
-        #innerTable1 ($state, "blue"),
-    #);
-
-    #$var2 = headerTable1(@varTableCells, "var", "one");
-    #$wordTable2 = headerTable(innerTable1 ($var2, "yellow"), "word", "one");
-
-
-    #@allTables = ( 
-        #innerTable1 ($wordTable, "blue"),
-        #innerTable1 ($spaceTable, "blue"), 
-        #innerTable1 ($wordTable2, "blue") );
-
-    #$outsideTable = headerTable1 (@allTables, "", "");
-
-
-    #print headerTable (innerTable1 ($outsideTable, "blue"), "", "");
-    #return;
 }
