@@ -105,7 +105,6 @@ sub test4 {
     Match::printLocations(@matchedLocations);
 #    Match::printHashedLocations(%hashedLocations);
 
-    my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
   
     # Select 22: var:(?:[a-z][a-z0-9_]*):two:9:11
     # This should come back with 2 'unintersting' matches
@@ -135,7 +134,6 @@ sub test5 {
     Match::printLocations(@matchedLocations);
 #    Match::printHashedLocations(%hashedLocations);
 
-    my @maxDepthLocations = Match::getMaxDepthLocations(%hashedLocations);
   
     my @userSelections = ( 2, 18 );
     my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);

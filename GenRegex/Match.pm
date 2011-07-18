@@ -17,6 +17,9 @@
 #
 # Code is released into the public domain. Do with it as you please.
 #
+# I started this project to learn Perl... so it's definitely not the greatest Perl code in the world.
+#  Feel free to contribute or send me suggestions.
+#
 package Match;
 
 use Location;
@@ -111,13 +114,6 @@ sub buildRegex ($\@\@) {
     foreach my $location (@$matchedLocations) {
         push (@{$hashedRegexs{$location->getRegex()}}, $location->getStart());
     }
-    foreach my $key (keys %hashedRegexs) {
-        print "$key\n";
-        foreach my $start (@{$hashedRegexs{$key}}) {
-            print "  $start\n";
-        }
-            
-    }
 
     # Simple hash map of $hash{string_pos}
     #  If the string position key exists then
@@ -127,11 +123,6 @@ sub buildRegex ($\@\@) {
     
     # Outputted regex
     my $regEx;
-
-    my @regExPieces;
-
-    # End of the last match (within the string)
-    my $lastEnd = -1;
 
     foreach my $selection (@$userSelections) {
         my $location;
@@ -163,7 +154,7 @@ sub buildRegex ($\@\@) {
         my @poss = findPatternMatches ($input, "", $matchContext);
         foreach my $possibleMatch (@poss) {
             if ($possibleMatch->getStart() < $location->getStart ()) {
-                print "Possible match added: " . $possibleMatch->getStart() . "\n";
+                #print "Possible match added: " . $possibleMatch->getStart() . "\n";
                 push(@possiblePrevMatches, $possibleMatch->getStart());
             }
         }
@@ -175,7 +166,7 @@ sub buildRegex ($\@\@) {
         #  look at the matched positions from start of match to end of match.
         #  If all spaces are "unoccupied" (ie, the keys do not exist) then insert 
         foreach my $possibleMatch (@possiblePrevMatches) {
-            print "Possible match at $possibleMatch\n";
+            #print "Possible match at $possibleMatch\n";
             my $occupied = 0;
 
             # Find the match at the location 
@@ -225,7 +216,6 @@ sub buildRegex ($\@\@) {
     my $start = 0;
     my @sortedKeys = sort { $a <=> $b } keys %matchedPositions;
     my $end = $sortedKeys[-1];
-    print "End: $end\n";
     for (my $position = $start; $position < $end; $position++) {
         if (!exists ($matchedPositions{$position})) {
             # find the end of the span
@@ -237,11 +227,6 @@ sub buildRegex ($\@\@) {
             $matchedPositions{$position} = ".*?";
         }
     }
-
-    #foreach my $position (sort { $a <=> $b } keys %matchedPositions) {
-        #print "$position: " . $matchedPositions{$position} . "\n";
-    #}
-    #print "\n";
 
     # Now look for any hash entries than are NOT blank entries
     #  and build the regex from there
@@ -340,8 +325,6 @@ sub findMatches ($\@) {
 }
 
 
-
-
 # Convert an array of matched locations to a hash of:
 # hash{start_of_match} = ( match1 match2 match3 )
 sub locationsToHash (\@) {
@@ -354,38 +337,6 @@ sub locationsToHash (\@) {
     }
 
     return %hashedLocations;
-}
-
-sub max {
-    my ($a, $b) = @_;
-
-    if ($a >= $b) {
-        return $a;
-    } else {
-        return $b;
-    }
-}
-
-
-
-
-# Determine the max "depth" of a search.  That is, 
-#  what is the maximum number of regex options for each 
-#  individual character.  Return the list at that locations
-sub getMaxDepthLocations (\%) {
-    my ($hashedLocations) = @_;
-
-    my $maxDepth = -1;
-    my $maxDepthLocation = -1;
-    foreach my $start (sort { $a <=> $b } keys %$hashedLocations) {
-        my $depth = scalar @{$hashedLocations->{$start}};
-        if ($maxDepth == -1 or $depth > $maxDepth) {
-            $maxDepth = $depth;
-            $maxDepthLocation = $start;
-        }
-    }
-
-    return @{$hashedLocations->{$maxDepthLocation}};
 }
 
 # Print an array of locations
