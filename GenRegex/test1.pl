@@ -183,11 +183,34 @@ sub test7 {
 
 }
 
+sub test8 {
+    my $testCase = "Test one";
+
+    my @mappingsList = Match::getGeneralMappings();
+
+    my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
+
+    Match::printLocations(@matchedLocations);
+
+    # Match the first "T", the second var ("one")
+
+    my @userSelections = ( 1, 15 );
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
+
+    print "$regEx\n";
+
+    return 1;
+
+}
+
+
 
 sub main {
     
 #    test7();
-    test6();
+    #test6();
+
+    test8();
 
     # All test cases should return non-zero if passed
     #test1() || print "Failed test1\n";

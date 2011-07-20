@@ -27,17 +27,19 @@ use Location;
 use strict;
 use warnings;
 
+
 sub getGeneralMappings {
     # Encode the mapping precedence by offset within a matching array
     my @mappingsList = (
             { "c" => [ "."  ] },
             { "w"   => [ "[a-z]" ] },
             { "ws"   => [ "\\s+" ] },
-            { "state"  => [ "ne" ] },
+            { "state"  => [ "(?:(?:AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY)(?![a-z]))" ] },
             { "var"  => [ "[a-z][a-z0-9_]*" ] },
             { "word" => [ "[a-z]+" ] },
             { "day"  => [ "(?:(?:[0-2]?\\d{1})|(?:[3][01]{1})))(?![\\d]" ] },
             { "int"  => [ "[0-9]+" ] },
+            { "hex"  => [ "0x[0-9A-F]{1,}" ] },
             { "month" => [ "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Sept|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)" ] },
             { "year"  => [ "(?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d]" ] }, 
             { "string" => [ '".*?"' , '\\\'.*?\\\'' ] },
@@ -54,7 +56,7 @@ sub getGeneralMappings {
 sub getMatchPrecedence {
     my ($match) = shift;
 
-    my @precedenceMap = qw( c w ws state var word day int month year string username ddmmmyyy unixpath ipaddress );
+    my @precedenceMap = qw( c w ws state var word day int hex month year string username ddmmmyyy unixpath ipaddress );
     
     my $matchPrecedence = 0;
     foreach my $matchTest (@precedenceMap) {
@@ -100,9 +102,21 @@ sub findPatternMatches {
     return @matchedLocations;
 }
 
+
+#
+# Build the regular expression
+#
+# This is quite nasty and should be refactored into a new class...
+#
 sub buildRegex ($\@\@) {
     # Assumes user selections are from "left to right"
     my ($input, $matchedLocations, $userSelections) = @_;
+
+    # Constants for the builder
+    use constant {
+        MATCH_REGEX => 0,   # Match the regex within the string
+        MATCH_TEXT  => 1,   # Match the full text within the string
+    };
 
     if (scalar @$userSelections <= 0) {
         return ".*";
@@ -128,16 +142,17 @@ sub buildRegex ($\@\@) {
         my $location;
         my $matchContext;
         my $matchType;
+
         if ($selection < 0) {
             # Negatives correspond to absolute matches
             $location = @$matchedLocations[-$selection];
             $matchContext = $location->getMatch();
-            $matchType = 1;  # Match the text
+            $matchType = MATCH_TEXT;
         } else {
             # Normal, match is by the regex
             $location = @$matchedLocations[$selection];
             $matchContext = $location->getRegex();
-            $matchType = 0;  # Match the regex
+            $matchType = MATCH_REGEX;
         }
 
         # Mark characters as matched
@@ -150,11 +165,10 @@ sub buildRegex ($\@\@) {
         
         # Look behind to see if the same regular expression could be
         #  matched anywhere else
-        my @possiblePrevMatches = (); 
+        my @possiblePrevMatches = ();   # Array of starting indices
         my @poss = findPatternMatches ($input, "", $matchContext);
         foreach my $possibleMatch (@poss) {
             if ($possibleMatch->getStart() < $location->getStart ()) {
-                #print "Possible match added: " . $possibleMatch->getStart() . "\n";
                 push(@possiblePrevMatches, $possibleMatch->getStart());
             }
         }
@@ -166,7 +180,6 @@ sub buildRegex ($\@\@) {
         #  look at the matched positions from start of match to end of match.
         #  If all spaces are "unoccupied" (ie, the keys do not exist) then insert 
         foreach my $possibleMatch (@possiblePrevMatches) {
-            #print "Possible match at $possibleMatch\n";
             my $occupied = 0;
 
             # Find the match at the location 
@@ -183,10 +196,43 @@ sub buildRegex ($\@\@) {
                         $matchedLocationSearch->getMatch() eq $location->getMatch()
                     ))
                 {
-
                     for (my $i = $matchedLocationSearch->getStart(); $i <= $matchedLocationSearch->getEnd(); $i++) {
                         if (exists ($matchedPositions{$i})) {
-                            # Occupied, not a possible match
+                            # Occupied. Possible elimination.  Try chopping off the string here 
+                            #  and seeing if the regex will still match, if so pop it back onto the list
+                            #  of possible matches
+                            my $chopped = substr ($input, $i + 1);
+                            print "Chopped: $chopped\n";
+                            print "Regex test: " . $matchedLocationSearch->getRegex () . "\n";
+
+                            ## Does it still match at the beginning?
+                            my $matchRegex = $matchedLocationSearch->getRegex ();
+                            if ($chopped =~ m/($matchRegex)/gi and
+                                $-[0] == 0) 
+                            {
+                                print "Still matches at the beginning!\n";
+                                push (@possiblePrevMatches, ($i + 1));
+
+                                # Add the match specifications to the list of matches... this
+                                #  really should be redesigned better
+                                
+                                # Store the match before we go screwing with the input string
+                                my $matchedString = $1;
+
+                                # Record the start and end of the match relative to the original input string
+                                my $start = $-[0] + $i + 1;
+                                my $end = $start + length($1) - 1;
+
+                                print "$start $end\n";
+
+                                # Record the match 
+                                push (@$matchedLocations, Location->new("", $matchRegex, $matchedString, $start, $end));
+                            } 
+                            else {
+                                $occupied = 1; 
+                                print "Match has been eliminated: " . $possibleMatch . "\n";
+                            }
+                            
                             $occupied = 1; 
                         }
                     }
