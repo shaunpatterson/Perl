@@ -20,8 +20,6 @@ my $selections = CGI::param ('sel');
 
 my @selections = split (',', $selections);
 
-@selection = map { $_ if $_ ne "" } @selections;
-
 if (not defined ($string)) {
     $string = "Test one two three";
 }
@@ -518,7 +516,11 @@ END
     
 
     # Clean any blank entries that may have popped up
+    #  and make sure they are sorted
     @selections = grep { $_ ne "" } @selections;
+    @selections = sort { abs($a) <=> abs($b) } @selections;
+
+    print "$_," for @selections;
 
 
     # Convert all matched locations to an n-ary tree
@@ -538,11 +540,11 @@ END
     print "<br/>";
 
 
-    my @userSelections = split (',', $selections);
+    #my @userSelections = split (',', $selections);
     print "<pre>";
     #Match::printLocations (@matchedLocations);
     my @matchedLocations = Match::findMatches ($testCase, @mappingsList);
-    my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
+    my $regEx = Match::buildRegex($testCase, @matchedLocations, @selections);
     print "Regex: $regEx\n";
 
     my @matches = $testCase =~ m/$regEx/i;

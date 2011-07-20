@@ -52,6 +52,18 @@ sub getIndex () {
     return $self->{index};
 }
 
+sub equals {
+    my ($self, $rhs) = @_;
+
+    return (
+           $self->{name} eq $rhs->getName() and
+           $self->getRegex() eq $rhs->getRegex() and
+           $self->getMatch() eq $rhs->getMatch() and
+           $self->getStart() == $rhs->getStart() and
+           $self->getEnd() == $rhs->getEnd()
+           );
+}
+
 sub toString () {
     my $self = shift;
     return "$self->{name}:$self->{regex}:$self->{match}:$self->{start}:$self->{end}:$self->{index}";

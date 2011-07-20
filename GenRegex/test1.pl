@@ -184,7 +184,7 @@ sub test7 {
 }
 
 sub test8 {
-    my $testCase = "Test one";
+    my $testCase = "Test one two three";
 
     my @mappingsList = Match::getGeneralMappings();
 
@@ -194,12 +194,23 @@ sub test8 {
 
     # Match the first "T", the second var ("one")
 
-    my @userSelections = ( 1, 15 );
+    my @userSelections = ( 1, 9, 15 );
+    #my @userSelections = ( 1, 15 );
     my $regEx = Match::buildRegex($testCase, @matchedLocations, @userSelections);
 
     print "$regEx\n";
 
     return 1;
+
+}
+
+sub test9 {
+    my $testCase = "Test";
+    my $regEx = "[a-z][a-z0-9_]*";
+
+    my @matches = Match::findAllPatternMatches ($testCase, "", $regEx); 
+
+    Match::printLocations (@matches);
 
 }
 
@@ -211,6 +222,9 @@ sub main {
     #test6();
 
     test8();
+    
+    #test9 ();
+
 
     # All test cases should return non-zero if passed
     #test1() || print "Failed test1\n";
