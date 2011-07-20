@@ -200,24 +200,18 @@ sub buildRegex ($\@\@) {
             $matchedPositions{$i} = "";
         }
         # Fill the start with the regular expression match
-        print "Filling " . $location->getStart () . "\n";
         for (my $i = $location->getStart(); $i < $location->getEnd(); $i++) {
             $matchedPositions{$i} = "";  # Occupied but nothing there...
         }
         my $lastMatchPosition = findLastMatchPosition (%matchedPositions);
         $matchedPositions{$location->getStart()} = "(" . $matchContext . ")";
             
-        print "------------------ LAST MATCH POSITION $lastMatchPosition\n";
-        
         # Look behind to see if the same regular expression could be
         #  matched anywhere else
         my @possiblePrevMatches = ();   # Array of starting indices
         my @poss = findAllPatternMatches ($input, "", $matchContext);
-            
         foreach my $possibleMatch (@poss) {
-
             if ($possibleMatch->getStart() < $location->getStart ()) {
-                print "Possible match added: " . $possibleMatch->getRegex () . " " . $possibleMatch->getStart() . "\n";
                 push(@possiblePrevMatches, $possibleMatch->getStart());
             }
         }
@@ -225,17 +219,10 @@ sub buildRegex ($\@\@) {
             sort { $a <=> $b } @possiblePrevMatches;
         }
 
-        print "Possible previous matches " . scalar @possiblePrevMatches . ":\n";
-        foreach my $possibleMatch (@possiblePrevMatches) {
-            print "Possible match: $possibleMatch\n";
-        }
-
-
         # Now take each possible previous match (they are by match start position)
         #  look at the matched positions from start of match to end of match.
         #  If all spaces are "unoccupied" (ie, the keys do not exist) then insert 
         foreach my $possibleMatch (@possiblePrevMatches) {
-            print "Possible match at $possibleMatch\n";
             my $occupied = 0;
 
 
@@ -261,23 +248,12 @@ sub buildRegex ($\@\@) {
                             #  and seeing if the regex will still match, if so pop it back onto the list
                             #  of possible matches
                             my $chopped = substr ($input, $i + 1);
-                            print "Chopped: $chopped\n";
-                            print "i = $i\n";
-                            print "Regex test: " . $matchedLocationSearch->getRegex () . "\n";
 
                             ## Does it still match at the beginning?
                             my $matchRegex = $matchedLocationSearch->getRegex ();
                             if ($chopped =~ m/($matchRegex)/gi and
                                 $-[0] == 0) 
                             {
-                                print "Start: " . $-[0] . "\n";
-                                print "Regex end: " . $matchedLocationSearch->getEnd () . "\n";
-                                print "Still matches at the beginning!\n";
-                                #push (@possiblePrevMatches, ($i + 1));
-
-                                # Add the match specifications to the list of matches... this
-                                #  really should be redesigned better
-                                
                                 # Store the match before we go screwing with the input string
                                 my $matchedString = $1;
 
@@ -285,27 +261,18 @@ sub buildRegex ($\@\@) {
                                 my $start = $-[0] + $i + 1;
                                 my $end = $start + length($1) - 1;
 
-                                print "Regex start: " . $matchedLocationSearch->getStart () . "\n";
-                                print "$start $end\n";
-
                                 # Record the match 
                                 my $newLocation = Location->new("", $matchRegex, $matchedString, $start, $end);
 
                                 # Make sure this is not in the list of locations already
                                 if (grep { $_->equals ($newLocation) } @$matchedLocations ) {
-                                    print "New location already exists\n";
                                 } else {
-
                                     push (@$matchedLocations, $newLocation);
-                                    print "New location: " . $newLocation->toString () . "\n";
-
-                                     print "Number of matched locations: " . scalar @$matchedLocations . "\n";
-                                 }
+                                }
                                 
                             } 
                             else {
                                 $occupied = 1; 
-                                print "Match has been eliminated: " . $possibleMatch . "\n";
                             }
                             
                             $occupied = 1; 
