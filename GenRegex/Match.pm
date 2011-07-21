@@ -160,11 +160,11 @@ sub buildRegex ($\@\@) {
         return ".*";
     }
 
-    # Convert all matched locations to a hash of
-    # $hash[REGEX] = ( position position position );
-    my %hashedRegexs;
+    # Convert all matches to a hash for easy lookups
+    # $hash[START] = Location
+    my %hashedLocations;
     foreach my $location (@$matchedLocations) {
-        push (@{$hashedRegexs{$location->getRegex()}}, $location->getStart());
+        push (@{$hashedLocations{$location->getStart()}}, $location);
     }
 
     # Simple hash map of $hash{string_pos}
@@ -228,7 +228,7 @@ sub buildRegex ($\@\@) {
 
             # Find the match at the location 
             my $matchLocation;
-            foreach my $matchedLocationSearch (@$matchedLocations) {
+            foreach my $matchedLocationSearch (@{$hashedLocations{$possibleMatch}}) {
                 if ((
                         $matchType == 0 and
                         $matchedLocationSearch->getStart() == $possibleMatch and
@@ -267,13 +267,10 @@ sub buildRegex ($\@\@) {
                                 # Make sure this is not in the list of locations already
                                 if (grep { $_->equals ($newLocation) } @$matchedLocations ) {
                                 } else {
-                                    push (@$matchedLocations, $newLocation);
+                                    push (@{$hashedLocations{$start}}, $newLocation);
                                 }
                                 
                             } 
-                            else {
-                                $occupied = 1; 
-                            }
                             
                             $occupied = 1; 
                             
@@ -339,200 +336,6 @@ sub buildRegex ($\@\@) {
     return $regEx;
 
 }
-
-sub buildRegex2 ($\@\@) {
-    # Assumes user selections are from "left to right"
-    my ($input, $matchedLocations, $userSelections) = @_;
-
-    # Constants for the builder
-    use constant {
-        MATCH_REGEX => 0,   # Match the regex within the string
-        MATCH_TEXT  => 1,   # Match the full text within the string
-    };
-
-    if (scalar @$userSelections <= 0) {
-        return ".*";
-    }
-
-    # Convert all matched locations to a hash of
-    # $hash[REGEX] = ( position position position );
-    my %hashedRegexs;
-    foreach my $location (@$matchedLocations) {
-        push (@{$hashedRegexs{$location->getRegex()}}, $location->getStart());
-    }
-
-    # Simple hash map of $hash{string_pos}
-    #  If the string position key exists then
-    #  a regular expression match is already selected
-    #  for that character
-    my %matchedPositions;
-    
-    # Outputted regex
-    my $regEx;
-
-    foreach my $selection (@$userSelections) {
-        my $location;
-        my $matchContext;
-        my $matchType;
-
-        if ($selection < 0) {
-            # Negatives correspond to absolute matches
-            $location = @$matchedLocations[-$selection];
-            $matchContext = $location->getMatch();
-            $matchType = MATCH_TEXT;
-        } else {
-            # Normal, match is by the regex
-            $location = @$matchedLocations[$selection];
-            $matchContext = $location->getRegex();
-            $matchType = MATCH_REGEX;
-        }
-
-        # Mark characters as matched
-        for (my $i = $location->getStart(); $i <= $location->getEnd(); $i++) {
-            # Occupied but nothing "there"
-            $matchedPositions{$i} = "";
-        }
-        # Fill the start with the regular expression match
-        $matchedPositions{$location->getStart()} = "(" . $matchContext . ")";
-        
-        # Look behind to see if the same regular expression could be
-        #  matched anywhere else
-        my @possiblePrevMatches = ();   # Array of starting indices
-        my @poss = findPatternMatches ($input, "", $matchContext);
-        foreach my $possibleMatch (@poss) {
-            if ($possibleMatch->getStart() < $location->getStart ()) {
-                print "Possible match added: " . $possibleMatch->getRegex () . " " . $possibleMatch->getStart() . "\n";
-                push(@possiblePrevMatches, $possibleMatch->getStart());
-            }
-        }
-        if (scalar @possiblePrevMatches) {
-            sort { $a <=> $b } @possiblePrevMatches;
-        }
-   
-        # Now take each possible previous match (they are by match start position)
-        #  look at the matched positions from start of match to end of match.
-        #  If all spaces are "unoccupied" (ie, the keys do not exist) then insert 
-        my $lastMatchPosition = 0;
-        foreach my $possibleMatch (@possiblePrevMatches) {
-            print "Possible match at $possibleMatch\n";
-            my $occupied = 0;
-
-            # Find the match at the location 
-            my $matchLocation;
-            foreach my $matchedLocationSearch (@$matchedLocations) {
-                if ((
-                        $matchType == 0 and
-                        $matchedLocationSearch->getStart() == $possibleMatch and
-                        $matchedLocationSearch->getRegex() eq $location->getRegex()
-                    ) or
-                    (
-                        $matchType == 1 and
-                        $matchedLocationSearch->getStart() == $possibleMatch and
-                        $matchedLocationSearch->getMatch() eq $location->getMatch()
-                    ))
-                {
-                    my $searchStart = $lastMatchPosition + 1;
-                    if ($matchedLocationSearch->getStart () > $searchStart) {
-                        $searchStart = $matchedLocationSearch->getStart ();
-                    }
-
-                    #for (my $i = $matchedLocationSearch->getStart(); $i <= $matchedLocationSearch->getEnd(); $i++) {
-                    for (my $i = $searchStart; $i <= $matchedLocationSearch->getEnd(); $i++) {
-                        if (exists ($matchedPositions{$i})) {
-                            # Occupied. Possible elimination.  Try chopping off the string here 
-                            #  and seeing if the regex will still match, if so pop it back onto the list
-                            #  of possible matches
-                            my $chopped = substr ($input, $i + 1);
-                            print "Chopped: $chopped\n";
-                            print "i = $i\n";
-                            print "Search start $searchStart\n"; 
-                            print "Regex test: " . $matchedLocationSearch->getRegex () . "\n";
-
-                            ## Does it still match at the beginning?
-                            my $matchRegex = $matchedLocationSearch->getRegex ();
-                            if ($chopped =~ m/($matchRegex)/gi and
-                                $-[0] == 0 and
-                                $-[0] + length ($1) - 1 < $matchedLocationSearch->getEnd ()) 
-                            {
-                                print "Start: " . $-[0] . "\n";
-                                print "Regex end: " . $matchedLocationSearch->getEnd () . "\n";
-                                print "Still matches at the beginning!\n";
-                                push (@possiblePrevMatches, ($i + 1));
-
-                                # Add the match specifications to the list of matches... this
-                                #  really should be redesigned better
-                                
-                                # Store the match before we go screwing with the input string
-                                my $matchedString = $1;
-
-                                # Record the start and end of the match relative to the original input string
-                                my $start = $-[0] + $i + 1;
-                                my $end = $start + length($1) - 1;
-
-                                print "$start $end\n";
-
-                                # Record the match 
-                                push (@$matchedLocations, Location->new("", $matchRegex, $matchedString, $start, $end));
-                            } 
-                            else {
-                                $occupied = 1; 
-                                print "Match has been eliminated: " . $possibleMatch . "\n";
-                            }
-                            
-                            $occupied = 1; 
-                        }
-                    }
-
-                    if ($occupied == 0) {
-                        # Add this regex to the list but as an "unimportant" match
-                        
-                        for (my $i = $matchedLocationSearch->getStart(); $i <= $matchedLocationSearch->getEnd(); $i++) {
-                            # Occupied but nothing "there"
-                            $matchedPositions{$i} = "";
-                        }
-                        $lastMatchPosition = $matchedLocationSearch->getEnd ();
-                        # Fill the start with the regular expression match
-                        if ($matchType == 0) {
-                            $matchedPositions{$matchedLocationSearch->getStart()} = "(?:" . $matchedLocationSearch->getRegex () . ")";
-                        } else {
-                            $matchedPositions{$matchedLocationSearch->getStart()} = "(?:" . $matchedLocationSearch->getMatch () . ")";
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-    # Now loop through the matched positions finding "spans"
-    # Fill the spans in with .*?
-    my $start = 0;
-    my @sortedKeys = sort { $a <=> $b } keys %matchedPositions;
-    my $end = $sortedKeys[-1];
-    for (my $position = $start; $position < $end; $position++) {
-        if (!exists ($matchedPositions{$position})) {
-            # find the end of the span
-            my $spanEnd = $position;
-            while (!exists ($matchedPositions{$spanEnd})) {
-                $matchedPositions{$spanEnd} = "";
-                $spanEnd++;
-            }
-            $matchedPositions{$position} = ".*?";
-        }
-    }
-
-    # Now look for any hash entries than are NOT blank entries
-    #  and build the regex from there
-    foreach my $position (sort { $a <=> $b } keys %matchedPositions) {
-        if ($matchedPositions{$position} ne "") {
-            $regEx .= $matchedPositions{$position};
-        }
-    }
-
-   
-    return $regEx;
-}
-
 
 sub locationSortComparator ($$) {
     my ($a, $b) = @_;
